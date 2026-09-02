@@ -1,2 +1,3 @@
 # CGTK-Website
+ya mungkin nanti ada yang berubah, sama buat ada yang pengen contoh cgtk tahun depan buat adkel
 .....
