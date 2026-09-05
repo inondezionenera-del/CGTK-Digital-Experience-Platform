@@ -16,13 +16,14 @@ from src.modules.participants import models as participants_models  # noqa: F401
 from src.modules.qr import models as qr_models  # noqa: F401
 from src.modules.audit import models as audit_models  # noqa: F401
 from src.modules.rbac import models as rbac_models  # noqa: F401
+from src.modules.attendance import models as attendance_models  # noqa: F401
 
 
 @pytest.fixture
 def db() -> Session:
     """Fresh SQLite in-memory DB per test. Good for domain-logic
     correctness; NOT a substitute for a Postgres integration test when
-    verifying true concurrent row-locking behavior.
+    verifying true concurrent row-locking behavior (Phase G).
     """
     engine = create_engine(
         "sqlite:///:memory:",

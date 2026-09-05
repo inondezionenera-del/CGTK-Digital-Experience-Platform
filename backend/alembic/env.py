@@ -15,6 +15,7 @@ from src.modules.participants import models as participants_models  # noqa
 from src.modules.qr import models as qr_models  # noqa
 from src.modules.audit import models as audit_models  # noqa
 from src.modules.rbac import models as rbac_models  # noqa
+from src.modules.attendance import models as attendance_models  # noqa
 
 config = context.config
 

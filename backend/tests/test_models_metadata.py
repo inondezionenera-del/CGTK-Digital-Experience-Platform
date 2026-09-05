@@ -3,7 +3,7 @@ create cleanly against a throwaway SQLite DB. This is NOT a substitute
 for real Postgres migrations — SQLite is only good enough to catch
 import errors, FK typos, and constraint syntax mistakes cheaply and
 fast. Row-level locking / partial-unique-index concurrency behavior
-must still be verified against Postgres.
+must still be verified against Postgres (Phase C/G).
 """
 
 from sqlalchemy import create_engine
@@ -19,6 +19,7 @@ from src.modules.participants import models as participants_models  # noqa: F401
 from src.modules.qr import models as qr_models  # noqa: F401
 from src.modules.audit import models as audit_models  # noqa: F401
 from src.modules.rbac import models as rbac_models  # noqa: F401
+from src.modules.attendance import models as attendance_models  # noqa: F401
 
 
 def test_all_domain_models_create_cleanly():
