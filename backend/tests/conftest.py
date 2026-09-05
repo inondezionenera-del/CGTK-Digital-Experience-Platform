@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from src.database import Base
+from src.database import Base, get_db
 from src.main import create_app
 
 # Import every module's models so Base.metadata is fully populated for
@@ -16,11 +16,6 @@ from src.modules.participants import models as participants_models  # noqa: F401
 from src.modules.qr import models as qr_models  # noqa: F401
 from src.modules.audit import models as audit_models  # noqa: F401
 from src.modules.rbac import models as rbac_models  # noqa: F401
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(create_app())
 
 
 @pytest.fixture
@@ -41,3 +36,14 @@ def db() -> Session:
         yield session
     finally:
         session.close()
+
+
+@pytest.fixture
+def client(db: Session) -> TestClient:
+    """TestClient wired to the same `db` session as whatever the test
+    sets up directly, so seeding via service functions and hitting the
+    API see the same data.
+    """
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: db
+    return TestClient(app)

@@ -75,6 +75,18 @@ def create_app() -> FastAPI:
     async def health() -> dict:
         return {"status": "ok"}
 
+    from src.modules.accounts.router import router as accounts_router
+    from src.modules.participants.router import router as participants_router
+    from src.modules.payments.router import router as payments_router
+    from src.modules.qr.router import router as qr_router
+    from src.modules.registration.router import router as registration_router
+
+    app.include_router(registration_router)
+    app.include_router(payments_router)
+    app.include_router(accounts_router)
+    app.include_router(qr_router)
+    app.include_router(participants_router)
+
     return app
 
 
