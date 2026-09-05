@@ -8,6 +8,13 @@ from src.database import Base
 
 # Import every module's models package here so Base.metadata is fully
 # populated before autogenerate runs.
+from src.modules.registration import models as registration_models  # noqa
+from src.modules.payments import models as payments_models  # noqa
+from src.modules.accounts import models as accounts_models  # noqa
+from src.modules.participants import models as participants_models  # noqa
+from src.modules.qr import models as qr_models  # noqa
+from src.modules.audit import models as audit_models  # noqa
+from src.modules.rbac import models as rbac_models  # noqa
 
 config = context.config
 
