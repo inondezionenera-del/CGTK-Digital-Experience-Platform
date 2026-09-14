@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment — NEVER commit these.
+# SUPABASE_SERVICE_ROLE_KEY grants unrestricted read/write on every table.
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Build output
+dist/
+.wrangler/
+
+# Database dumps
+*.sql.gz
+backup/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,28 @@
+name = "cgtk-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Public, non-secret configuration.
+# Secrets (SUPABASE_SERVICE_ROLE_KEY, QR_SIGNING_SECRET) are set with:
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+#   wrangler secret put QR_SIGNING_SECRET
+[vars]
+ENVIRONMENT = "development"
+SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+
+# Rate limiting and offline-sync idempotency use KV.
+# Create with: wrangler kv namespace create RATE_LIMIT
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "REPLACE_ME"
+
+[observability]
+enabled = true
+
+[env.production]
+name = "cgtk-api"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
