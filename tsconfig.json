@@ -4,7 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"],
+    // "node" is here for the tests and the migration runner only. Worker code
+    // must not reach for Node APIs — they are not there at runtime.
+    "types": ["@cloudflare/workers-types", "node"],
 
     "strict": true,
     "noUncheckedIndexedAccess": true,

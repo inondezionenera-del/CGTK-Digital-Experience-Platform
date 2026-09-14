@@ -199,7 +199,7 @@ app.patch('/activities/admin/:id', wajibLogin, butuhIzin('ATUR_XP'), async (c) =
 // =============================================================================
 
 /**
- * GET /admin/points/kewajaran
+ * GET /points/admin/kewajaran
  *
  * Flags only — it never penalises anyone. The committee decides.
  *
@@ -208,7 +208,7 @@ app.patch('/activities/admin/:id', wajibLogin, butuhIzin('ATUR_XP'), async (c) =
  * who walks past. When someone protests that a winner cheated, this is what
  * turns the answer into evidence instead of an opinion.
  */
-app.get('/points/kewajaran', wajibLogin, wajibSuperAdmin, async (c) => {
+app.get('/points/admin/kewajaran', wajibLogin, wajibSuperAdmin, async (c) => {
   const hasil = await rpc(c.env, 'cek_kewajaran_xp', {});
   return ok(c, hasil);
 });

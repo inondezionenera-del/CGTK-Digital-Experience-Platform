@@ -27,7 +27,8 @@ import alumni from './modules/alumni';
  * mistake is contained to the file that caused it.
  */
 
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const api = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = api;
 
 app.onError(tangkapError);
 app.notFound(tidakDitemukan);
@@ -155,4 +156,16 @@ app.route('/', master);
 app.route('/', content);
 app.route('/', admin);
 
-export default app;
+/**
+ * The API Contract gives the base URL as `https://cgtk.my.id/api/v1`, so every
+ * route answers under that prefix as well as at the root. Same router, two
+ * spellings: the prefix is what the frontend team codes against, and the bare
+ * path is what a Worker route without a prefix receives.
+ */
+const root = new Hono<{ Bindings: Env; Variables: Variables }>();
+root.onError(tangkapError);
+root.notFound(tidakDitemukan);
+root.route('/api/v1', api);
+root.route('/', api);
+
+export default root;

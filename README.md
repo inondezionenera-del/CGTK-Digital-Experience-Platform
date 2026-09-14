@@ -226,7 +226,7 @@ slowest part of the check-in path.
 | `/events` | `events.ts` | Events, sessions, the ACTIVE/CLOSED switch |
 | `/universities`, `/majors`, `/representatives` | `master.ts` | Master data and alumni invitations |
 | `/announcements`, `/sponsors`, `/pages` | `content.ts` | Announcements (with polling), sponsors, static pages |
-| `/settings`, `/form_fields`, `/activities`, `/points`, `/audit`, `/exports` | `admin.ts` | Configuration, form builder, XP values, audit, LPJ export |
+| `/settings`, `/form_fields`, `/activities`, `/points/admin`, `/audit`, `/exports` | `admin.ts` | Configuration, form builder, XP values, anomaly check, audit, LPJ export |
 | `/lo` | `lo.ts` | Liaison officers — read-only |
 | `/alumni` | `alumni.ts` | Alumni dashboard, statistics, certificate, post-event recap |
 
@@ -234,9 +234,8 @@ Administrative routes are nested under their own module — `/payments/admin/...
 not `/admin/payments/...` — so one file owns one prefix and a permission mistake
 cannot spread outside it.
 
-> **Note for the frontend team:** the API Contract document uses the opposite
-> order (`/admin/payments/...`). The implementation in this repository is
-> authoritative; the document will be updated to match.
+Every route answers both at the root and under `/api/v1`, which is the base URL
+the API Contract gives the frontend team. Same router, two spellings.
 
 Rate limits (only active when a KV namespace is bound): 10/min on auth, 30/min
 on scanning, 5/min on sync, 10/min on public status lookups, 120/min otherwise.
