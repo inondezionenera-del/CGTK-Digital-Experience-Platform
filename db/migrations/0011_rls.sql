@@ -34,9 +34,14 @@ declare
   t text;
 begin
   for t in
-    select tablename from pg_tables
-    where schemaname = 'public'
-      and tablename <> '_migrations'
+    select t.tablename from pg_tables t
+    where t.schemaname = 'public'
+      and t.tablename <> '_migrations'
+      and not exists (
+        select 1 from pg_depend d
+        join pg_class c on c.oid = d.objid
+        where c.relname = t.tablename and d.deptype = 'e'
+      )
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format('alter table public.%I force row level security', t);
@@ -128,7 +133,16 @@ begin
     select p.oid::regprocedure as sig
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.prokind = 'f'
+    where n.nspname = 'public'
+      and p.prokind = 'f'
+      -- Skip anything belonging to an extension. pg_trgm installs its functions
+      -- into public and they are owned by supabase_admin, so altering them fails
+      -- with "must be owner of function gtrgm_out" — and they are not ours to
+      -- harden anyway.
+      and not exists (
+        select 1 from pg_depend d
+        where d.objid = p.oid and d.deptype = 'e'
+      )
   loop
     execute format('alter function %s set search_path = public, pg_temp', f.sig);
   end loop;
