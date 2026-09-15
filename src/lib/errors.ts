@@ -42,12 +42,17 @@ export const ERRORS = {
   BOOTH_TIDAK_DITEMUKAN:  { status: 404, pesan: 'Booth tidak ditemukan' },
   BUKAN_BOOTH_ANDA:       { status: 403, pesan: 'Kamu tidak bertugas di booth ini' },
   BUKAN_ALUMNI:           { status: 403, pesan: 'Akun ini bukan alumni booth' },
+  BUKAN_PESERTA:          { status: 403, pesan: 'Bagian ini hanya untuk peserta' },
   XP_MELEBIHI_BATAS:      { status: 422, pesan: 'XP melebihi batas booth' },
 
   // --- materials ---
   TIPE_FILE_DITOLAK:      { status: 400, pesan: 'File PPT tidak bisa diunggah. Simpan sebagai PDF dulu, atau taruh link Google Drive-nya.' },
   FILE_TERLALU_BESAR:     { status: 400, pesan: 'Ukuran maksimal 10 MB. Coba taruh link Google Drive saja.' },
   BATAS_MATERI_TERCAPAI:  { status: 409, pesan: 'Maksimal 5 materi per booth/kampus' },
+
+  // --- layanan kuis & gamifikasi (Danar) ---
+  LAYANAN_BELUM_SIAP:     { status: 503, pesan: 'Fitur ini belum dinyalakan panitia' },
+  LAYANAN_TIDAK_MERESPONS:{ status: 503, pesan: 'Fitur ini sedang tidak bisa dihubungi, coba sebentar lagi' },
 
   // --- quiz & leaderboard ---
   KUIS_HABIS:             { status: 409, pesan: 'Percobaan kuis sudah habis' },

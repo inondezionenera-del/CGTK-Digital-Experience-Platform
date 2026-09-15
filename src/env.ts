@@ -23,6 +23,15 @@ export interface Env {
   ENVIRONMENT: 'development' | 'production';
   ALLOWED_ORIGINS?: string;
 
+  /**
+   * Base URL of Danar's Python service (quiz, missions, achievements, levels,
+   * cosmetics, reports). Requests to those prefixes are forwarded there.
+   *
+   * Unset means those features answer 503 with a readable message; everything
+   * else keeps working. That is deliberate — the gate must not depend on it.
+   */
+  PYTHON_API_URL?: string;
+
   /** Optional. Rate limiting degrades to a no-op when absent. */
   RATE_LIMIT?: KVNamespace;
 }
