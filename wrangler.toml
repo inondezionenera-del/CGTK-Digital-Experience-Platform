@@ -9,7 +9,7 @@ compatibility_flags = ["nodejs_compat"]
 #   wrangler secret put QR_SIGNING_SECRET
 [vars]
 ENVIRONMENT = "development"
-SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
 
 # Rate limiting and offline-sync idempotency use KV.
 # Create with: wrangler kv namespace create RATE_LIMIT
@@ -25,4 +25,4 @@ name = "cgtk-api"
 
 [env.production.vars]
 ENVIRONMENT = "production"
-SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
