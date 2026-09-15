@@ -30,6 +30,7 @@ export const PREFIKS_DANAR = [
   'quiz',
   'missions',
   'achievements',
+  'leaderboard',
   'levels',
   'cosmetics',
   'reports',

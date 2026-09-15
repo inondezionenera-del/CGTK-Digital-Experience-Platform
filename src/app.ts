@@ -18,7 +18,6 @@ import content from './modules/content';
 import admin from './modules/admin';
 import lo from './modules/lo';
 import alumni from './modules/alumni';
-import leaderboard from './modules/leaderboard';
 import proxy, { PREFIKS_DANAR } from './modules/proxy';
 
 /**
@@ -149,16 +148,8 @@ app.route('/events', events);
 app.route('/lo', lo);
 app.route('/alumni', alumni);
 
-/**
- * Leaderboard stays here even though the rest of gamification is Danar's: it is
- * the heaviest read in the system, everybody opens it at once, and there is a
- * prize behind it. The ranking logic is a Postgres function, so his side calls
- * the same one — one definition of who is winning.
- */
-app.route('/leaderboard', leaderboard);
-
-// Danar's Python service, behind this Worker so the frontend sees one origin
-// and one token. Mounted last: a prefix defined above always wins.
+// Danar's modules, in his own Python service, reached through this Worker so the
+// frontend sees one origin and one token.
 for (const p of PREFIKS_DANAR) app.route(`/${p}`, proxy);
 
 // Mounted at the root: these own top-level nouns of their own

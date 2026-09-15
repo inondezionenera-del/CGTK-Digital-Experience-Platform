@@ -75,7 +75,11 @@ grant usage, select on all sequences in schema public to cgtk_kuis;
 -- entry — the same path my scanners take.
 -- -----------------------------------------------------------------------------
 grant select on point_transactions to cgtk_kuis;
-grant select on activities, levels, leaderboard_freeze to cgtk_kuis;
+grant select on activities, levels to cgtk_kuis;
+
+-- The leaderboard module is his, so freezing and confirming winners run from his
+-- side. He needs the table those two functions write to.
+grant select, insert, update on leaderboard_freeze to cgtk_kuis;
 
 -- Reference data his recommendation logic reads: the quiz produces a field of
 -- study, and campuses are matched to it through university_majors.
@@ -104,15 +108,21 @@ grant select (id, nama) on users to cgtk_kuis;
 -- -----------------------------------------------------------------------------
 alter function tambah_xp(uuid, text, text, bigint, int, uuid, text) security definer;
 
+-- Same reason for these two: both write an audit entry through catat_audit(),
+-- which Danar cannot call directly — on purpose, so the log cannot be shaped by
+-- hand. Running as the owner means the entry still gets written.
+alter function bekukan_leaderboard(uuid, int) security definer;
+alter function sahkan_pemenang(uuid, int, text) security definer;
+
 grant execute on function tambah_xp(uuid, text, text, bigint, int, uuid, text) to cgtk_kuis;
 grant execute on function total_xp(uuid) to cgtk_kuis;
 grant execute on function level_peserta(int) to cgtk_kuis;
 grant execute on function hitung_leaderboard(int) to cgtk_kuis;
+grant execute on function bekukan_leaderboard(uuid, int) to cgtk_kuis;
+grant execute on function sahkan_pemenang(uuid, int, text) to cgtk_kuis;
 
 -- Deliberately NOT granted, and each for a reason:
 --
---   bekukan_leaderboard, sahkan_pemenang  — these decide who wins a prize.
---                                           Committee action, not code.
 --   scan_presensi, scan_booth, checkin_booth — the event-day path stays in one
 --                                           service.
 --   tandai_lunas, batal_lunas             — money.
