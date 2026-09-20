@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Cek Status Pendaftaran - CGTK 2027</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+    <main class="page">
+
+        <section class="status-card">
+
+            <div class="header">
+
+                <span class="badge">
+                    CGTK 2027
+                </span>
+
+                <h1>
+                    Cek Status Pendaftaran
+                </h1>
+
+                <p>
+                    Masukkan kode registrasi untuk melihat
+                    status pendaftaranmu.
+                </p>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form id="statusForm">
+
+                <label for="registrationCode">
+                    Kode Registrasi
+                </label>
+
+
+                <div class="input-wrapper">
+
+                    <input
+                        type="text"
+                        id="registrationCode"
+                        name="registrationCode"
+                        placeholder="CGTK-______"
+                        autocomplete="off"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    id="checkButton"
+                >
+                    Cek Status
+                </button>
+
+            </form>
+
+
+            <!-- ERROR -->
+
+            <div
+                id="errorMessage"
+                class="message error-message"
+                hidden
+            ></div>
+
+
+            <!-- RESULT -->
+
+            <section
+                id="result"
+                class="result"
+                hidden
+            >
+
+                <div
+                    id="statusIcon"
+                    class="status-icon"
+                >
+                </div>
+
+
+                <div class="result-content">
+
+                    <span class="result-label">
+                        Status Pendaftaran
+                    </span>
+
+                    <h2 id="statusTitle">
+                        -
+                    </h2>
+
+                    <p id="statusMessage">
+                        -
+                    </p>
+
+
+                    <p
+                        id="participantName"
+                        class="participant-name"
+                    >
+                        -
+                    </p>
+
+                </div>
+
+            </section>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
