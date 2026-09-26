@@ -4,6 +4,7 @@ import type { Env, Variables } from '../env';
 import { db, rpc } from '../lib/db';
 import { AppError, pastikanSukses } from '../lib/errors';
 import { ok, dibuat, halaman, bacaPaginasi } from '../lib/respond';
+import { satu } from '../lib/relasi';
 import { bacaQr, hashToken } from '../lib/qr';
 import { wajibLogin } from '../middleware/auth';
 import { butuhIzin, wajibSuperAdmin } from '../middleware/rbac';
@@ -215,11 +216,14 @@ app.get('/sync/data-offline', wajibLogin,
     ]);
 
     const daftar = await Promise.all((peserta ?? []).map(async (p) => {
-      const u = p.users as unknown as { nama: string };
-      const reg = (p.registrations as unknown as { registrations?: { status: string }[] })?.registrations?.[0];
+      const u = satu<{ nama: string }>(p.users);
+      // registrations.user_id UNIQUE, jadi ditempelkan sebagai objek.
+      const reg = satu<{ status: string }>(
+        satu<{ registrations?: unknown }>(p.registrations)?.registrations,
+      );
       return {
         token_hash: await hashToken(p.qr_token as string),
-        nama: u.nama,
+        nama: u?.nama ?? '',
         sekolah: p.asal_sekolah,
         lunas: reg?.status === 'LUNAS',
       };

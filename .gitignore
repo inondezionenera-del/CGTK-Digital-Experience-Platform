@@ -29,4 +29,5 @@ npm-debug.log*
 # uji beban
 loadtest/token-uji.json
 loadtest/qr-uji.json
+loadtest/token-peran.json
 loadtest/hasil.json

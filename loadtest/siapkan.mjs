@@ -80,9 +80,13 @@ if (DATABASE_URL.includes(':6543')) {
 const b64url = (buf) => Buffer.from(buf).toString('base64url');
 
 function susunQr(token) {
+  // Yang ditandatangani adalah `CGTK1.<token>`, BUKAN token saja. Lihat
+  // tandaTangan() di src/lib/qr.ts. Kalau bagian ini salah, semua scan dijawab
+  // QR_TIDAK_VALID dengan alasan TANDA_TANGAN, dan uji bebannya cuma mengukur
+  // kecepatan menolak.
   const sig = crypto
     .createHmac('sha256', QR_SIGNING_SECRET)
-    .update(token)
+    .update(`CGTK1.${token}`)
     .digest('hex')
     .slice(0, 12);
   return `CGTK1.${token}.${sig}`;
@@ -110,12 +114,61 @@ function susunJwt(sub, email) {
 const sql = postgres(DATABASE_URL, { max: 4, onnotice: () => {} });
 
 async function bersihkan() {
-  // users dihapus, participants dan registrations ikut lewat on delete cascade.
+  // Tidak cukup `delete from users`. Sebagian yang mengacu ke users dipasang
+  // NO ACTION dengan sengaja, supaya orang yang pernah memindai QR atau
+  // memverifikasi pembayaran tidak bisa dihapus dan menghilangkan jejaknya:
+  //
+  //   attendances.scanned_by          point_transactions.diberikan_oleh
+  //   payments.ditandai_oleh          payments.dibatalkan_oleh
+  //   sync_conflicts.dilaporkan_oleh  leaderboard_freeze.dibekukan_oleh
+  //   announcements.dibuat_oleh       settings.diubah_oleh
+  //
+  // Bagus untuk audit, tapi artinya pembersihan harus urut dari ujung. Kalau
+  // tidak, penghapusannya gagal separuh jalan dan meninggalkan akun uji yang
+  // lebih susah dibersihkan daripada sebelumnya.
+  const uji = sql`select id from users where email like ${PENANDA + '%'}`;
+
+  const langkah = [
+    ['attendances', sql`delete from attendances where user_id in (${uji}) or scanned_by in (${uji})`],
+    ['point_transactions', sql`
+      delete from point_transactions
+      where diberikan_oleh in (${uji})
+         or participant_id in (select id from participants where user_id in (${uji}))`],
+    ['booth_visits', sql`
+      delete from booth_visits
+      where participant_id in (select id from participants where user_id in (${uji}))`],
+    ['booth_checkins', sql`
+      delete from booth_checkins
+      where participant_id in (select id from participants where user_id in (${uji}))`],
+    ['payments', sql`
+      delete from payments
+      where ditandai_oleh in (${uji}) or dibatalkan_oleh in (${uji})
+         or registration_id in (select id from registrations where user_id in (${uji}))`],
+    ['sync_conflicts', sql`delete from sync_conflicts where dilaporkan_oleh in (${uji})`],
+    ['announcements', sql`delete from announcements where dibuat_oleh in (${uji})`],
+    ['leaderboard_freeze', sql`
+      delete from leaderboard_freeze
+      where dibekukan_oleh in (${uji}) or disahkan_oleh in (${uji})`],
+    ['settings.diubah_oleh', sql`update settings set diubah_oleh = null where diubah_oleh in (${uji})`],
+    ['representatives', sql`delete from representatives where user_id in (${uji})`],
+    ['registrations', sql`delete from registrations where user_id in (${uji})`],
+    ['participants', sql`delete from participants where user_id in (${uji})`],
+  ];
+
+  for (const [nama, kueri] of langkah) {
+    try {
+      await kueri;
+    } catch (e) {
+      console.log(`  gagal membersihkan ${nama}: ${e.message}`);
+    }
+  }
+
   const hapus = await sql`
-    delete from users where email like ${PENANDA + '-%'} returning id
+    delete from users where email like ${PENANDA + '%'} returning id
   `;
   console.log(`  ${hapus.length} akun uji dihapus.`);
-  for (const f of ['token-uji.json', 'qr-uji.json']) {
+
+  for (const f of ['token-uji.json', 'qr-uji.json', 'token-peran.json', 'hasil.json']) {
     const p = path.join(HERE, f);
     if (fs.existsSync(p)) {
       fs.unlinkSync(p);

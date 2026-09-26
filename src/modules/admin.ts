@@ -4,6 +4,7 @@ import type { Env, Variables } from '../env';
 import { db, rpc } from '../lib/db';
 import { AppError } from '../lib/errors';
 import { ok, dibuat, halaman, bacaPaginasi } from '../lib/respond';
+import { satu } from '../lib/relasi';
 import * as setting from '../lib/settings';
 import { wajibLogin } from '../middleware/auth';
 import { butuhIzin, wajibSuperAdmin } from '../middleware/rbac';
@@ -271,8 +272,10 @@ app.get('/exports/lpj', wajibLogin, butuhIzin('EKSPOR_LPJ'), async (c) => {
 
   const totalDaftar = peserta.data?.length ?? 0;
   const totalLunas = (peserta.data ?? []).filter((p) => {
-    const reg = (p as Record<string, unknown>)['users2'] as { registrations?: { status: string }[] } | null;
-    return reg?.registrations?.[0]?.status === 'LUNAS';
+    // registrations.user_id UNIQUE, jadi PostgREST menempelkannya sebagai objek.
+    const pemilik = (p as Record<string, unknown>)['users2'];
+    const reg = satu<{ registrations?: unknown }>(pemilik)?.registrations;
+    return satu<{ status: string }>(reg)?.status === 'LUNAS';
   }).length;
 
   return ok(c, {

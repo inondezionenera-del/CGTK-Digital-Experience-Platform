@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Env, Pengguna, Variables } from '../env';
 import { AppError } from '../lib/errors';
+import { satu } from '../lib/relasi';
 import { db } from '../lib/db';
 
 /**
@@ -77,17 +78,17 @@ async function muatPengguna(env: Env, userId: string): Promise<Pengguna> {
     .map((rp) => rp.permissions?.kode)
     .filter((k): k is string => Boolean(k));
 
-  const participants = data.participants as unknown as { id: string }[] | null;
-  const representatives = data.representatives as unknown as { id: number }[] | null;
-
+  // participants.user_id dan representatives.user_id dua-duanya UNIQUE, jadi
+  // PostgREST menempelkannya sebagai objek, bukan array. Dibaca lewat satu()
+  // supaya tetap benar kalau bentuknya berubah.
   return {
     id: data.id,
     email: data.email,
     nama: data.nama,
     peran,
     izin,
-    participantId: participants?.[0]?.id,
-    representativeId: representatives?.[0]?.id,
+    participantId: satu<{ id: string }>(data.participants)?.id,
+    representativeId: satu<{ id: number }>(data.representatives)?.id,
   };
 }
 
