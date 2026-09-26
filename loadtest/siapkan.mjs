@@ -238,6 +238,57 @@ async function siapkan() {
     if ((i + 1) % 50 === 0) console.log(`  ${i + 1}/${JUMLAH} ...`);
   }
 
+  // -------------------------------------------------------------------------
+  // Akun per peran.
+  //
+  // Token peserta TIDAK bisa dipakai untuk skenario scan. Peserta cuma punya
+  // izin LIHAT_DASHBOARD dan IKUT_KUIS, jadi POST /attendance/scan dijawab 403
+  // dan uji bebannya melaporkan 100% gagal padahal servernya sehat. Yang
+  // memindai di lapangan itu panitia, jadi yang dipakai harus tokennya panitia.
+  // -------------------------------------------------------------------------
+  const peranTambahan = [
+    ['pemindai', 'DIV_ADMINISTRASI', 'Panitia Pemindai Uji'],
+    ['admin', 'SUPER_ADMIN', 'Super Admin Uji'],
+    ['alumni', 'ALUMNI', 'Alumni Uji'],
+  ];
+
+  const tokenPeran = {};
+
+  for (const [kunci, kodePeran, nama] of peranTambahan) {
+    const [r] = await sql`select id from roles where kode = ${kodePeran} limit 1`;
+    if (!r) {
+      console.log(`  Peringatan: peran ${kodePeran} tidak ada, ${kunci} dilewati.`);
+      continue;
+    }
+
+    const email = `${PENANDA}-${kunci}@contoh.invalid`;
+    const [u] = await sql`
+      insert into users (email, nama, role_id, status)
+      values (${email}, ${nama}, ${r.id}, 'AKTIF')
+      on conflict (email) do update set nama = excluded.nama, role_id = excluded.role_id
+      returning id
+    `;
+
+    // Alumni butuh baris representatives yang AKTIF, kalau tidak wajibAlumni
+    // menolaknya dan skenario booth ikut merah tanpa sebab yang jelas.
+    if (kodePeran === 'ALUMNI') {
+      const [kampus] = await sql`select id from universities order by id limit 1`;
+      const [jur] = await sql`select id from majors order by id limit 1`;
+      await sql`
+        insert into representatives (user_id, email_undangan, university_id, major_id, angkatan, status)
+        values (${u.id}, ${email}, ${kampus?.id ?? null}, ${jur?.id ?? null}, 2023, 'AKTIF')
+        on conflict (user_id) do update set status = 'AKTIF'
+      `;
+    }
+
+    tokenPeran[kunci] = susunJwt(u.id, email);
+  }
+
+  fs.writeFileSync(
+    path.join(HERE, 'token-peran.json'),
+    JSON.stringify(tokenPeran, null, 2),
+  );
+
   fs.writeFileSync(path.join(HERE, 'token-uji.json'), JSON.stringify(token, null, 2));
   fs.writeFileSync(
     path.join(HERE, 'qr-uji.json'),
@@ -249,7 +300,8 @@ async function siapkan() {
   );
 
   console.log(`\n  ${JUMLAH} akun uji siap.`);
-  console.log(`  token-uji.json  ${token.length} token, berlaku 6 jam`);
+  console.log(`  token-uji.json  ${token.length} token peserta, berlaku 6 jam`);
+  console.log(`  token-peran.json ${Object.keys(tokenPeran).join(', ')}`);
   console.log(`  qr-uji.json     ${qr.length} QR, session_id ${sesi?.id ?? '-'}, booth_id ${booth?.id ?? '-'}`);
   console.log('\n  Keduanya sudah ada di .gitignore. Jangan dikirim ke siapa pun.');
   console.log('  Setelah tes selesai:  node loadtest/siapkan.mjs --bersihkan\n');

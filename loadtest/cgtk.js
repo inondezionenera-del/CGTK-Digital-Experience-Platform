@@ -27,21 +27,52 @@ import { Trend, Rate, Counter } from 'k6/metrics';
 const BASE = __ENV.BASE || __ENV.BASE_URL || 'http://127.0.0.1:8787/api/v1';
 
 const TOKEN = JSON.parse(open('./token-uji.json'));
+const PERAN = JSON.parse(open('./token-peran.json'));
 const BAHAN = JSON.parse(open('./qr-uji.json'));
 const QR = BAHAN.qr;
 const SESSION_ID = BAHAN.session_id;
 const BOOTH_ID = BAHAN.booth_id;
+
+// Status mana yang dianggap WAJAR oleh k6.
+//
+// Tanpa ini, k6 menghitung 409 sebagai kegagalan HTTP, lalu melaporkan
+// http_req_failed 80% padahal servernya sehat: 409 itu jawaban yang BENAR untuk
+// peserta yang sudah pernah presensi, dan menolaknya memang tugas sistem.
+// 204 juga wajar, itu jawaban polling pengumuman waktu tidak ada yang baru.
+// Kalau dibiarkan, laporan uji beban jadi merah terus dan orang berhenti
+// mempercayainya, yang jauh lebih berbahaya daripada tidak mengukur.
+http.setResponseCallback(http.expectedStatuses(200, 201, 204, 409));
 
 const waktuScan = new Trend('waktu_scan', true);
 const gagalScan = new Rate('gagal_scan');
 const waktuSync = new Trend('waktu_sync', true);
 const belumSiap = new Counter('fitur_belum_siap_503');
 
+/** Header sebagai peserta ke-i. */
 function kepala(i) {
+  return bawa(TOKEN[i % TOKEN.length]);
+}
+
+/**
+ * Header sebagai panitia, alumni, atau super admin.
+ *
+ * Yang memindai QR di lapangan itu panitia, bukan peserta. Peserta cuma punya
+ * izin LIHAT_DASHBOARD dan IKUT_KUIS, jadi kalau skenario scan memakai token
+ * peserta, semuanya dijawab 403 dan laporannya berbunyi 100% gagal padahal
+ * servernya sehat. Itu hasil yang menyesatkan, dan lebih buruk daripada tidak
+ * mengukur sama sekali.
+ */
+function sebagai(kunci) {
+  const t = PERAN[kunci];
+  if (!t) throw new Error(`token peran '${kunci}' tidak ada, jalankan ulang loadtest/siapkan.mjs`);
+  return bawa(t);
+}
+
+function bawa(token) {
   return {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${TOKEN[i % TOKEN.length]}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 }
@@ -131,9 +162,33 @@ const SEMUA = {
   },
 };
 
+// SKALA mengecilkan seluruh beban dengan satu angka, supaya bisa dikalibrasi
+// dulu sebelum dilepas penuh. SKALA=0.1 berarti sepersepuluh.
+//
+// Ini bukan hiasan: menembak 200 pengguna ke satu-satunya database yang kita
+// punya, di paket gratis, tanpa pernah mencoba yang kecil dulu itu cara cepat
+// membuat Supabase membatasi kita di hari yang salah. Kalibrasi kecil dulu,
+// lihat angkanya wajar, baru naik.
+const SKALA = Number(__ENV.SKALA ?? 1);
+
+function skalakan(s) {
+  const k = (n, min = 1) => Math.max(min, Math.round(n * SKALA));
+  const out = { ...s };
+  if (out.vus) out.vus = k(out.vus);
+  if (out.iterations) out.iterations = k(out.iterations);
+  if (out.rate) out.rate = k(out.rate);
+  if (out.preAllocatedVUs) out.preAllocatedVUs = k(out.preAllocatedVUs);
+  if (out.maxVUs) out.maxVUs = k(out.maxVUs);
+  if (out.duration && __ENV.DURASI) out.duration = __ENV.DURASI;
+  if (out.maxDuration && __ENV.DURASI) out.maxDuration = __ENV.DURASI;
+  return out;
+}
+
 const pilih = __ENV.S;
 export const options = {
-  scenarios: pilih ? { [pilih]: { ...SEMUA[pilih], startTime: '0s' } } : SEMUA,
+  scenarios: pilih
+    ? { [pilih]: { ...skalakan(SEMUA[pilih]), startTime: '0s' } }
+    : Object.fromEntries(Object.entries(SEMUA).map(([k, v]) => [k, skalakan(v)])),
 
   thresholds: {
     // Scan itu satu-satunya angka yang benar-benar dirasakan peserta: 800 ms
@@ -209,7 +264,7 @@ export function scanPresensi() {
       waktu_scan: new Date().toISOString(),
       mode_cepat: true,
     }),
-    kepala(__ITER),
+    sebagai('pemindai'),
   );
 
   waktuScan.add(Date.now() - mulai);
@@ -238,13 +293,15 @@ export function scanBooth() {
       scan_uuid: uuid(),
       waktu_scan: new Date().toISOString(),
     }),
-    kepala(__ITER),
+    sebagai('alumni'),
   );
 
-  // 403 wajar: token uji perannya PESERTA, bukan alumni. Yang diuji di sini
-  // bebannya, bukan hak aksesnya, dan penolakan hak akses tetap menyentuh
-  // database untuk memuat peran.
-  check(r, { 'booth tidak 5xx': (x) => x.status < 500 });
+  // 200/201 berhasil, 409 berarti peserta itu sudah pernah ambil XP di booth
+  // ini, dan menolaknya memang tugas sistem.
+  check(r, {
+    'booth terjawab benar': (x) => [200, 201, 409].includes(x.status),
+    'booth tidak 5xx': (x) => x.status < 500,
+  });
 }
 
 /* -----------------------------------------------------------------------------
@@ -290,7 +347,7 @@ export function kirimAntreanOffline() {
   const r = http.post(
     `${BASE}/attendance/sync/attendance`,
     JSON.stringify({ batch }),
-    { ...kepala(__VU), timeout: '60s' },
+    { ...sebagai('pemindai'), timeout: '60s' },
   );
   waktuSync.add(Date.now() - mulai);
 
@@ -313,11 +370,14 @@ export function kirimAntreanOffline() {
    8. Export LPJ
 ----------------------------------------------------------------------------- */
 export function exportLPJ() {
-  const r = http.get(`${BASE}/exports/lpj`, { ...kepala(0), timeout: '180s' });
+  const r = http.get(`${BASE}/exports/lpj`, { ...sebagai('admin'), timeout: '180s' });
 
-  // 403 wajar, token uji perannya PESERTA. Yang diuji: apakah permintaan berat
-  // ini menjatuhkan yang lain waktu dijalankan di tengah kesibukan.
-  check(r, { 'export tidak 5xx': (x) => x.status < 500 });
+  // Yang diuji: apakah permintaan berat ini menjatuhkan yang lain waktu
+  // dijalankan di tengah kesibukan, bukan sekadar apakah dia berhasil.
+  check(r, {
+    'export berhasil': (x) => x.status === 200,
+    'export tidak 5xx': (x) => x.status < 500,
+  });
 }
 
 /* -----------------------------------------------------------------------------
