@@ -75,22 +75,22 @@ where not exists (
 -- benar-benar ada gunanya waktu dicoba. Daftar dengan tiga baris selalu
 -- kelihatan baik-baik saja, dan itu yang menipu.
 -- -----------------------------------------------------------------------------
-insert into universities (nama, singkatan, kota, akreditasi, website, warna_khas)
-select v.nama, v.singkatan, v.kota, v.akreditasi, v.website, v.warna
+insert into universities (nama, singkatan, kota, akreditasi, website, warna_khas, jenis)
+select v.nama, v.singkatan, v.kota, v.akreditasi, v.website, v.warna, v.jenis
 from (values
-  ('Institut Teknologi Bandung',          'ITB',   'Bandung',    'Unggul',      'https://itb.ac.id',              '#005AA7'),
-  ('Institut Teknologi Sepuluh Nopember', 'ITS',   'Surabaya',   'Unggul',      'https://its.ac.id',              '#003D7C'),
-  ('Universitas Indonesia',               'UI',    'Depok',      'Unggul',      'https://ui.ac.id',               '#FFD700'),
-  ('Universitas Gadjah Mada',             'UGM',   'Yogyakarta', 'Unggul',      'https://ugm.ac.id',              '#F2A900'),
-  ('Universitas Airlangga',               'UNAIR', 'Surabaya',   'Unggul',      'https://unair.ac.id',            '#00549F'),
-  ('Universitas Brawijaya',               'UB',    'Malang',     'Unggul',      'https://ub.ac.id',               '#1E4B8F'),
-  ('Universitas Jember',                  'UNEJ',  'Jember',     'Baik Sekali', 'https://unej.ac.id',             '#006837'),
-  ('Universitas Negeri Surabaya',         'UNESA', 'Surabaya',   'Unggul',      'https://unesa.ac.id',            '#004A8F'),
-  ('Universitas Trunojoyo Madura',        'UTM',   'Bangkalan',  'Baik Sekali', 'https://trunojoyo.ac.id',        '#8B0000'),
-  ('Universitas Padjadjaran',             'UNPAD', 'Bandung',    'Unggul',      'https://unpad.ac.id',            '#F5A623'),
-  ('Universitas Diponegoro',              'UNDIP', 'Semarang',   'Unggul',      'https://undip.ac.id',            '#004B87'),
-  ('Universitas Telkom',                  'TELU',  'Bandung',    'Unggul',      'https://telkomuniversity.ac.id', '#C8102E')
-) as v(nama, singkatan, kota, akreditasi, website, warna)
+  ('Institut Teknologi Bandung',          'ITB',   'Bandung',    'Unggul',      'https://itb.ac.id',              '#005AA7', 'NEGERI'),
+  ('Institut Teknologi Sepuluh Nopember', 'ITS',   'Surabaya',   'Unggul',      'https://its.ac.id',              '#003D7C', 'NEGERI'),
+  ('Universitas Indonesia',               'UI',    'Depok',      'Unggul',      'https://ui.ac.id',               '#FFD700', 'NEGERI'),
+  ('Universitas Gadjah Mada',             'UGM',   'Yogyakarta', 'Unggul',      'https://ugm.ac.id',              '#F2A900', 'NEGERI'),
+  ('Universitas Airlangga',               'UNAIR', 'Surabaya',   'Unggul',      'https://unair.ac.id',            '#00549F', 'NEGERI'),
+  ('Universitas Brawijaya',               'UB',    'Malang',     'Unggul',      'https://ub.ac.id',               '#1E4B8F', 'NEGERI'),
+  ('Universitas Jember',                  'UNEJ',  'Jember',     'Baik Sekali', 'https://unej.ac.id',             '#006837', 'NEGERI'),
+  ('Universitas Negeri Surabaya',         'UNESA', 'Surabaya',   'Unggul',      'https://unesa.ac.id',            '#004A8F', 'NEGERI'),
+  ('Universitas Trunojoyo Madura',        'UTM',   'Bangkalan',  'Baik Sekali', 'https://trunojoyo.ac.id',        '#8B0000', 'NEGERI'),
+  ('Universitas Padjadjaran',             'UNPAD', 'Bandung',    'Unggul',      'https://unpad.ac.id',            '#F5A623', 'NEGERI'),
+  ('Universitas Diponegoro',              'UNDIP', 'Semarang',   'Unggul',      'https://undip.ac.id',            '#004B87', 'NEGERI'),
+  ('Universitas Telkom',                  'TELU',  'Bandung',    'Unggul',      'https://telkomuniversity.ac.id', '#C8102E', 'SWASTA')
+) as v(nama, singkatan, kota, akreditasi, website, warna, jenis)
 where not exists (select 1 from universities u where u.singkatan = v.singkatan);
 
 insert into majors (nama, rumpun, deskripsi)

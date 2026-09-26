@@ -21,31 +21,89 @@ const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 // UNIVERSITIES
 // =============================================================================
 
+const JENIS_KAMPUS = ['NEGERI', 'SWASTA', 'KEDINASAN'] as const;
+
+/**
+ * GET /universities
+ *
+ * ?cari=    nama atau singkatan
+ * ?jenis=   NEGERI | SWASTA | KEDINASAN
+ * ?rumpun=  kampus yang punya minimal satu jurusan di rumpun itu
+ *
+ * Tiga saringan itu yang digambar di halaman direktori. `rumpun` tidak ada di
+ * tabel universities dan memang tidak perlu ada: dia menempel di majors, dan
+ * kampus dihubungkan ke jurusan lewat university_majors. Jadi daftar id-nya
+ * diambil dulu, baru dipakai menyaring, karena menuliskan "punya minimal satu
+ * jurusan di rumpun ini" lewat PostgREST jauh lebih berbelit daripada dua kueri
+ * yang jelas.
+ */
 app.get('/universities', async (c) => {
   const cari = (c.req.query('cari') ?? '').trim();
+  const jenis = (c.req.query('jenis') ?? '').trim().toUpperCase();
+  const rumpun = (c.req.query('rumpun') ?? '').trim();
+
+  if (jenis && !(JENIS_KAMPUS as readonly string[]).includes(jenis)) {
+    throw new AppError('DATA_TIDAK_VALID', {
+      pesan: `jenis harus salah satu dari ${JENIS_KAMPUS.join(', ')}`,
+    });
+  }
+
+  let idRumpun: number[] | null = null;
+  if (rumpun) {
+    const { data: pasangan, error: eRumpun } = await db(c.env)
+      .from('university_majors')
+      .select('university_id, majors!inner(rumpun)')
+      .eq('majors.rumpun', rumpun);
+
+    if (eRumpun) throw new AppError('ERROR_SERVER', { pesan: eRumpun.message });
+
+    idRumpun = [...new Set((pasangan ?? []).map((r) => r.university_id as number))];
+
+    // Rumpun yang tidak dipakai kampus mana pun bukan kesalahan, cuma hasil
+    // kosong. Dijawab lebih awal supaya tidak jadi kueri `in ()` yang kosong.
+    if (idRumpun.length === 0) return ok(c, []);
+  }
+
   let q = db(c.env)
     .from('universities')
-    .select('id, nama, singkatan, logo_url, kota, akreditasi, website, warna_khas')
+    .select('id, nama, singkatan, logo_url, kota, akreditasi, website, warna_khas, jenis')
     .eq('aktif', true)
     .order('nama');
 
   if (cari) q = q.or(`nama.ilike.%${cari}%,singkatan.ilike.%${cari}%`);
+  if (jenis) q = q.eq('jenis', jenis);
+  if (idRumpun) q = q.in('id', idRumpun);
 
   const { data, error } = await q;
   if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
 
-  // How many alumni are actually on site — so the directory shows who is
-  // waiting, not just a list of logos.
-  const hasil = [];
-  for (const u of data ?? []) {
-    const { count } = await db(c.env)
-      .from('representatives')
-      .select('id', { count: 'exact', head: true })
-      .eq('university_id', u.id).eq('status', 'AKTIF');
-    hasil.push({ ...u, jumlah_alumni: count ?? 0 });
+  const kampus = data ?? [];
+  if (kampus.length === 0) return ok(c, []);
+
+  // Berapa alumni yang benar-benar hadir, supaya direktorinya menunjukkan siapa
+  // yang menunggu di booth, bukan cuma daftar logo.
+  //
+  // Dulu bagian ini satu kueri per kampus. Dengan 40 kampus itu 41 perjalanan ke
+  // database untuk satu halaman yang dibuka lima ratus orang, dan di paket
+  // gratis itu terasa. Sekarang satu kueri, lalu dihitung di sini.
+  const { data: alumni, error: eAlumni } = await db(c.env)
+    .from('representatives')
+    .select('university_id')
+    .eq('status', 'AKTIF')
+    .in('university_id', kampus.map((u) => u.id as number));
+
+  if (eAlumni) throw new AppError('ERROR_SERVER', { pesan: eAlumni.message });
+
+  const jumlah = new Map<number, number>();
+  for (const a of alumni ?? []) {
+    const id = a.university_id as number;
+    jumlah.set(id, (jumlah.get(id) ?? 0) + 1);
   }
 
-  return ok(c, hasil);
+  return ok(
+    c,
+    kampus.map((u) => ({ ...u, jumlah_alumni: jumlah.get(u.id as number) ?? 0 })),
+  );
 });
 
 app.get('/universities/:id', async (c) => {
@@ -87,6 +145,9 @@ const skemaUniv = z.object({
   akreditasi: z.string().max(40).optional(),
   website: z.string().url().nullable().optional(),
   warna_khas: z.string().max(20).optional(),
+  // Boleh dikosongkan. Divisi Acara belum tentu tahu jenis tiap kampus waktu
+  // memasukkannya, dan memaksa mereka memilih cuma membuat isinya dikarang.
+  jenis: z.enum(JENIS_KAMPUS).nullable().optional(),
   aktif: z.boolean().optional(),
 });
 

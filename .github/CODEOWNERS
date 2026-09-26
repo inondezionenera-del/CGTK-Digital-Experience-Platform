@@ -1,0 +1,32 @@
+# Siapa yang WAJIB mereview apa.
+#
+# Lubang yang ditutup berkas ini:
+#
+# Proteksi branch minta 1 persetujuan sebelum boleh merge. Tapi di repo ini ada
+# empat orang dengan akses tulis, dan GitHub menerima persetujuan dari siapa pun
+# di antara mereka. Artinya Danar bisa menyetujui PR Rijal, atau sebaliknya, dan
+# perubahan pada db/migrations/ bisa masuk ke main tanpa pernah dilihat Rafly.
+#
+# Dengan berkas ini plus setelan "Require review from Code Owners", persetujuan
+# yang dihitung hanya persetujuan pemilik berkasnya.
+
+# Bawaan: semua butuh Rafly.
+*                       @inondezionenera-del
+
+# Yang paling tidak boleh lewat tanpa dilihat: struktur database dan hak akses.
+# Migration yang salah tidak bisa dibatalkan setelah dijalankan ke server yang
+# sudah berisi pendaftar.
+/db/                    @inondezionenera-del
+/db/migrations/         @inondezionenera-del
+/db/manual/             @inondezionenera-del
+
+# Kunci, alamat, dan setelan lingkungan.
+/wrangler.toml          @inondezionenera-del
+/.dev.vars.example      @inondezionenera-del
+/scripts/               @inondezionenera-del
+/.github/               @inondezionenera-del
+
+# Middleware identitas dan hak akses. Satu baris yang salah di sini membuka
+# seluruh data pendaftaran.
+/src/middleware/        @inondezionenera-del
+/src/lib/qr.ts          @inondezionenera-del

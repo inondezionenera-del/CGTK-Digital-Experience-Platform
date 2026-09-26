@@ -420,6 +420,49 @@ describe('fungsi Postgres', () => {
     });
   });
 
+  describe('jenis kampus', () => {
+    bila('hanya menerima NEGERI, SWASTA, atau KEDINASAN', async () => {
+      const [k] = await sql!`
+        insert into universities (nama, singkatan, jenis)
+        values (${PENANDA + ' cek jenis'}, ${'TJ' + Date.now().toString().slice(-6)}, 'NEGERI')
+        returning id
+      `;
+
+      // Nilai di luar daftar harus ditolak database, bukan cuma ditolak Zod.
+      // Kalau cuma dijaga di Worker, satu skrip impor yang lupa memvalidasi
+      // sudah cukup untuk menaruh 'negri' atau 'Negeri' di sana, dan tombol
+      // saring peserta berhenti bekerja tanpa ada yang tahu sebabnya.
+      await expect(
+        sql!`update universities set jenis = 'NGAWUR' where id = ${k!.id}`,
+      ).rejects.toThrow();
+
+      // Kosong harus boleh: Divisi Acara belum tentu tahu jenis tiap kampus
+      // waktu memasukkannya.
+      await sql!`update universities set jenis = null where id = ${k!.id}`;
+      const [sesudah] = await sql!`select jenis from universities where id = ${k!.id}`;
+      expect(sesudah!.jenis).toBeNull();
+    });
+
+    bila('rumpun diturunkan dari majors, bukan disimpan di universities', async () => {
+      // Saringan rumpun di halaman direktori bergantung pada rantai ini. Kalau
+      // university_majors kosong, tombolnya selalu memberi hasil nol dan
+      // kelihatan seperti fiturnya rusak.
+      const [n] = await sql!`
+        select count(distinct um.university_id)::int as n
+        from university_majors um
+        join majors m on m.id = um.major_id
+        where m.rumpun = 'Kesehatan'
+      `;
+      expect(n!.n).toBeGreaterThan(0);
+
+      const [kolom] = await sql!`
+        select count(*)::int as n from information_schema.columns
+        where table_name = 'universities' and column_name = 'rumpun'
+      `;
+      expect(kolom!.n).toBe(0);
+    });
+  });
+
   describe('audit', () => {
     bila('setiap pemberian XP meninggalkan jejak', async () => {
       // Kalau nanti ada yang protes "kok dia menang, curang itu", jawabannya
