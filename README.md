@@ -149,7 +149,15 @@ the Worker is running would report green while every check-in fails.
 | `npm test` | Vitest |
 | `npm run db:push` | Apply pending migrations |
 | `npm run db:reset` | Drop and rebuild (development only) |
+| `npm run db:contoh` | Load demo data for the frontend team (`db/manual/data-contoh.sql`) |
 | `npm run deploy` | `wrangler deploy` |
+| `bash scripts/deploy.sh` | Guided first deploy: login, push secrets, deploy, smoke test |
+
+`db:contoh` fills `events`, `sessions`, `universities`, `majors`,
+`university_majors`, `booths` and `sponsors` with plausible rows so the frontend
+has something to render before the event division supplies real data. It is not
+a migration on purpose: demo rows must not reappear every time the database is
+rebuilt. Safe to run twice. Removal statements are at the bottom of the file.
 
 ---
 
