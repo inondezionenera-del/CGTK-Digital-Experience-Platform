@@ -125,10 +125,32 @@ to anon, authenticated;
 -- `search_path` is pinned on each one so that a schema placed earlier on the
 -- path cannot shadow a table name inside a SECURITY DEFINER body.
 -- -----------------------------------------------------------------------------
+--
+-- `extensions` is on the path too, and behind `public` on purpose.
+--
+-- Supabase installs pgcrypto into `extensions`, not `public`. Pinning to
+-- `public, pg_temp` alone takes `gen_random_bytes()` out of view, which breaks
+-- `generate_token()` — and that is what issues a participant's QR after payment
+-- and what fills `booths.qr_token_booth`. Neither is exercised while writing
+-- code, so the failure surfaces on the day somebody is first marked paid.
+--
+-- Keeping `public` first means our own tables are still resolved before
+-- anything in `extensions` could shadow them, and `extensions` belongs to
+-- supabase_admin, so neither anon nor authenticated can plant a function there.
+--
 do $$
 declare
   f record;
+  v_ext text;
 begin
+  -- Look up where pgcrypto actually landed rather than assuming, so this still
+  -- works on a plain Postgres where it sits in `public`.
+  select n.nspname into v_ext
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where p.proname = 'gen_random_bytes' limit 1;
+
+  v_ext := coalesce(v_ext, 'public');
+
   for f in
     select p.oid::regprocedure as sig
     from pg_proc p
@@ -144,7 +166,8 @@ begin
         where d.objid = p.oid and d.deptype = 'e'
       )
   loop
-    execute format('alter function %s set search_path = public, pg_temp', f.sig);
+    execute format('alter function %s set search_path = public, %I, pg_temp',
+                   f.sig, v_ext);
   end loop;
 end $$;
 

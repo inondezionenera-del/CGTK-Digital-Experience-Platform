@@ -51,7 +51,7 @@ fi
 npx wrangler whoami | tail -5
 
 echo
-echo "=== 2/4  Memasang rahasia ==="
+echo "=== 2/5  Memasang rahasia ==="
 for nama in $RAHASIA; do
   printf '%s' "$(baca "$nama")" | npx wrangler secret put "$nama" >/dev/null 2>&1 \
     && echo "  $nama terpasang" \
@@ -59,7 +59,48 @@ for nama in $RAHASIA; do
 done
 
 echo
-echo "=== 3/4  Menaikkan Worker ==="
+echo "=== 3/5  KV untuk rate limit ==="
+# Tanpa KV, middleware batasi() langsung lewat tanpa menghitung apa pun
+# (lihat src/middleware/ratelimit.ts, "if (!kv) return next()"). Artinya
+# keempat batas yang dijanjikan di dokumen tidak ada yang aktif, dan halaman
+# cek status bisa ditembaki terus untuk menebak kode registrasi orang.
+if grep -q '^\[\[kv_namespaces\]\]' wrangler.toml; then
+  echo "  KV sudah terdaftar di wrangler.toml, dilewati"
+else
+  KELUARAN=$(npx wrangler kv namespace create RATE_LIMIT 2>&1 || true)
+  echo "$KELUARAN" | tail -3
+  KV_ID=$(echo "$KELUARAN" | grep -oE '"?id"?[ =:]+"?[0-9a-f]{32}' | grep -oE '[0-9a-f]{32}' | head -1)
+
+  if [ -z "$KV_ID" ]; then
+    echo
+    echo "  Tidak bisa membaca id KV dari keluaran di atas."
+    echo "  Salin id-nya sendiri, lalu tambahkan ke wrangler.toml:"
+    echo
+    echo "    [[kv_namespaces]]"
+    echo '    binding = "RATE_LIMIT"'
+    echo '    id = "id-yang-tadi"'
+    echo
+    read -r -p "  Tekan Enter kalau sudah, atau Ctrl+C untuk berhenti. " _
+  else
+    # Sisipkan tepat sebelum [observability], menggantikan blok yang dikomentari.
+    node -e '
+      const fs = require("fs");
+      const id = process.argv[1];
+      let t = fs.readFileSync("wrangler.toml", "utf8");
+      const blok = "[[kv_namespaces]]\nbinding = \"RATE_LIMIT\"\nid = \"" + id + "\"\n";
+      t = t.replace(/# \[\[kv_namespaces\]\]\r?\n# binding = "RATE_LIMIT"\r?\n# id = "REPLACE_ME"\r?\n/, blok);
+      if (!t.includes("[[kv_namespaces]]")) {
+        throw new Error("blok KV yang dikomentari tidak ditemukan di wrangler.toml");
+      }
+      fs.writeFileSync("wrangler.toml", t);
+    ' "$KV_ID"
+    echo "  KV dibuat dan dicatat di wrangler.toml (id $KV_ID)"
+    echo "  Jangan lupa commit wrangler.toml setelah ini."
+  fi
+fi
+
+echo
+echo "=== 4/5  Menaikkan Worker ==="
 npx wrangler deploy 2>&1 | tee /tmp/cgtk-deploy.log
 
 ALAMAT=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/cgtk-deploy.log | head -1 || true)
@@ -72,7 +113,7 @@ if [ -z "$ALAMAT" ]; then
 fi
 
 echo
-echo "=== 4/4  Mengetes ==="
+echo "=== 5/5  Mengetes ==="
 echo "  $ALAMAT/health"
 curl -s --max-time 20 "$ALAMAT/health" || true
 echo
