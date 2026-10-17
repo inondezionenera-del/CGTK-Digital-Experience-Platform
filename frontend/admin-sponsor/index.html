@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#061a17">
+    <title>Admin Sponsor | CGTK 2027</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+
+        <aside class="sidebar" id="sidebar">
+            <a href="#" class="brand">
+                <span class="brand-icon">C</span>
+                <span>
+                    <strong>CGTK 2027</strong>
+                    <small>Admin Dashboard</small>
+                </span>
+            </a>
+
+            <div class="sidebar-label">MENU UTAMA</div>
+
+            <nav class="navigation">
+                <a href="../admin-jadwal/index.html" class="nav-link">
+                    <span>◷</span> Jadwal Acara
+                </a>
+                <a href="#" class="nav-link active" aria-current="page">
+                    <span>✦</span> Manajemen Sponsor
+                </a>
+                <a href="../campuses/index.html" class="nav-link">
+                    <span>⌂</span> Direktori Kampus
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="status-dot"></span>
+                <span>Mode demo frontend</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <button
+                    type="button"
+                    class="menu-toggle"
+                    id="menuToggle"
+                    aria-label="Buka navigasi"
+                    aria-expanded="false"
+                >☰</button>
+
+                <div class="breadcrumb">
+                    Dashboard <span>/</span> Sponsor
+                </div>
+
+                <div class="admin-profile">
+                    <div class="avatar">A</div>
+                    <div>
+                        <strong>Administrator</strong>
+                        <small>Pengelola CGTK</small>
+                    </div>
+                </div>
+            </header>
+
+            <section class="page-content">
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">PENGELOLAAN KONTEN</p>
+                        <h1>Manajemen Sponsor</h1>
+                        <p class="subtitle">
+                            Kelola identitas, tingkatan, dan penempatan sponsor CGTK 2027.
+                        </p>
+                    </div>
+
+                    <button type="button" class="button button-primary" id="addSponsorBtn">
+                        <span>+</span> Tambah Sponsor
+                    </button>
+                </div>
+
+                <section class="summary-grid" aria-label="Ringkasan sponsor">
+                    <article class="summary-card">
+                        <span class="summary-icon">✦</span>
+                        <p>Total Sponsor</p>
+                        <strong id="totalSponsors">0</strong>
+                        <small>Seluruh data sponsor</small>
+                    </article>
+
+                    <article class="summary-card">
+                        <span class="summary-icon">✓</span>
+                        <p>Sponsor Aktif</p>
+                        <strong id="activeSponsors">0</strong>
+                        <small>Ditandai aktif dalam demo</small>
+                    </article>
+
+                    <article class="summary-card">
+                        <span class="summary-icon">▦</span>
+                        <p>Tingkatan Sponsor</p>
+                        <strong id="tierCount">0</strong>
+                        <small>Tingkatan yang digunakan</small>
+                    </article>
+                </section>
+
+
+                <section class="panel slot-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Pengaturan Slot Sponsor</h2>
+                            <p>Kontrol tampilan slot sponsor pada halaman publik.</p>
+                        </div>
+
+                        <label class="switch">
+                            <input type="checkbox" id="slotToggle" checked>
+                            <span class="switch-track"></span>
+                            <span class="sr-only">Aktifkan slot sponsor</span>
+                        </label>
+                    </div>
+
+                    <div class="slot-notice" id="slotNotice" role="status">
+                        <span class="notice-icon">i</span>
+                        <div>
+                            <strong>Mode demo aktif</strong>
+                            <p>
+                                Pengaturan ini hanya berlaku di halaman demo.
+                                Status slot produksi harus mengikuti konfigurasi backend.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sponsor form -->
+                <section class="panel form-panel" id="formPanel">
+                    <div class="panel-heading">
+                        <div>
+                            <h2 id="formTitle">Tambah Sponsor</h2>
+                            <p>Lengkapi informasi sponsor di bawah ini.</p>
+                        </div>
+                        <button type="button" class="icon-button" id="closeFormBtn"
+                            aria-label="Tutup formulir">✕</button>
+                    </div>
+
+                    <form id="sponsorForm">
+                        <input type="hidden" id="sponsorId">
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="sponsorName">Nama sponsor <span>*</span></label>
+                                <input
+                                    type="text"
+                                    id="sponsorName"
+                                    maxlength="120"
+                                    placeholder="Contoh: Sponsor Teknologi"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sponsorTier">Tingkatan sponsor <span>*</span></label>
+                                <select id="sponsorTier" required>
+                                    <option value="">Pilih tingkatan</option>
+                                    <option value="Platinum">Platinum</option>
+                                    <option value="Gold">Gold</option>
+                                    <option value="Silver">Silver</option>
+                                    <option value="Media Partner">Media Partner</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="sponsorLogo">Logo sponsor (PNG/SVG, maks. 500 KB)</label>
+                                <input
+                                    type="file"
+                                    id="sponsorLogo"
+                                    accept=".png,.svg,image/png,image/svg+xml"
+                                >
+                                <small class="field-help">
+                                    Gunakan logo yang jelas. Jika tidak memilih file baru
+                                    saat mengedit, logo sebelumnya akan dipertahankan.
+                                </small>
+                                <p class="field-error" id="logoError" role="alert"></p>
+
+                                <div class="logo-preview" id="logoPreview" hidden>
+                                    <img id="previewImage" src="" alt="Pratinjau logo sponsor">
+                                    <span id="previewFileName"></span>
+                                    <button type="button" id="removeLogoBtn" class="text-button">
+                                        Hapus logo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="sponsorUrl">URL sponsor (opsional)</label>
+                                <input
+                                    type="url"
+                                    id="sponsorUrl"
+                                    placeholder="https://contoh.com"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sponsorOrder">Urutan tampilan <span>*</span></label>
+                                <input
+                                    type="number"
+                                    id="sponsorOrder"
+                                    min="1"
+                                    max="9999"
+                                    step="1"
+                                    value="1"
+                                    required
+                                >
+                                <small class="field-help">
+                                    Angka lebih kecil ditampilkan lebih dahulu.
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Status sponsor</label>
+                                <label class="checkbox-row">
+                                    <input type="checkbox" id="sponsorActive" checked>
+                                    <span>Aktifkan sponsor</span>
+                                </label>
+                            </div>
+
+                            <fieldset class="form-group full-width placement-fieldset">
+                                <legend>Penempatan sponsor <span>*</span></legend>
+                                <p class="field-help">
+                                    Pilih halaman tempat sponsor ditampilkan.
+                                </p>
+
+                                <div class="placement-options">
+                                    <label class="checkbox-row">
+                                        <input type="checkbox" name="placement" value="home">
+                                        <span>Halaman utama</span>
+                                    </label>
+                                    <label class="checkbox-row">
+                                        <input type="checkbox" name="placement" value="campuses">
+                                        <span>Direktori kampus</span>
+                                    </label>
+                                    <label class="checkbox-row">
+                                        <input type="checkbox" name="placement" value="booths">
+                                        <span>Direktori booth</span>
+                                    </label>
+                                </div>
+                                <p class="field-error" id="placementError" role="alert"></p>
+                            </fieldset>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="button button-secondary" id="cancelBtn">
+                                Batal
+                            </button>
+                            <button type="submit" class="button button-primary" id="saveBtn">
+                                Simpan Sponsor
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel list-panel">
+                    <div class="panel-heading list-heading">
+                        <div>
+                            <h2>Daftar Sponsor</h2>
+                            <p>Atur dan tinjau data sponsor yang tersimpan di demo ini.</p>
+                        </div>
+
+                        <div class="search-box">
+                            <span>⌕</span>
+                            <input type="search" id="searchInput"
+                                placeholder="Cari sponsor..." aria-label="Cari sponsor">
+                        </div>
+                    </div>
+
+                    <div class="filter-row">
+                        <label for="tierFilter" class="sr-only">Filter tingkatan</label>
+                        <select id="tierFilter">
+                            <option value="">Semua tingkatan</option>
+                            <option value="Platinum">Platinum</option>
+                            <option value="Gold">Gold</option>
+                            <option value="Silver">Silver</option>
+                            <option value="Media Partner">Media Partner</option>
+                        </select>
+
+                        <label for="statusFilter" class="sr-only">Filter status</label>
+                        <select id="statusFilter">
+                            <option value="">Semua status</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Nonaktif</option>
+                        </select>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Sponsor</th>
+                                    <th>Tingkatan</th>
+                                    <th>Penempatan</th>
+                                    <th>Urutan</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sponsorTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="empty-state" id="emptyState" hidden>
+                        <span>▦</span>
+                        <h3>Belum ada sponsor</h3>
+                        <p>Tambahkan sponsor atau ubah filter pencarianmu.</p>
+                    </div>
+                </section>
+                
+                <section class="panel preview-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Pratinjau Sponsor</h2>
+                            <p>Simulasi tampilan sponsor aktif berdasarkan tingkatan.</p>
+                        </div>
+                        <span class="demo-badge">DEMO</span>
+                    </div>
+
+                    <div id="sponsorPreview" class="sponsor-preview"></div>
+                </section>
+
+                <footer class="page-footer">
+                    CGTK 2027 · Admin Sponsor · Frontend demo
+                </footer>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

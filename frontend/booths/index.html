@@ -1,0 +1,70 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Booth - CGTK 2027</title>
+</head>
+<body>
+
+    <header>
+        <h1>Daftar Booth CGTK 2027</h1>
+        <p>Temukan kampus, jurusan, dan materi yang tersedia.</p>
+    </header>
+
+    <main>
+        <section aria-labelledby="boothTitle">
+            <h2 id="boothTitle">Jelajahi Booth</h2>
+
+            <label for="searchBooth">Cari booth</label>
+            <input
+                type="search"
+                id="searchBooth"
+                placeholder="Cari nama booth atau lokasi..."
+                autocomplete="off"
+            >
+
+            <nav aria-label="Filter jenis acara">
+                <button
+                    type="button"
+                    class="event-tab"
+                    data-event="EXPO_KAMPUS"
+                    aria-pressed="true"
+                >
+                    Expo Kampus
+                </button>
+
+                <button
+                    type="button"
+                    class="event-tab"
+                    data-event="EXPO_JURUSAN"
+                    aria-pressed="false"
+                >
+                    Expo Jurusan
+                </button>
+            </nav>
+
+            <p id="loadingState" role="status" hidden>
+                Memuat daftar booth...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Tidak ada booth yang sesuai.
+            </p>
+
+            <section
+                id="boothList"
+                aria-label="Daftar booth"
+                aria-live="polite"
+            >
+            </section>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```

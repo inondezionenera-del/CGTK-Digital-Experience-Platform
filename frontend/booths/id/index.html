@@ -1,0 +1,86 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Booth - CGTK 2027</title>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html">← Kembali ke Daftar Booth</a>
+        <h1>Detail Booth</h1>
+    </header>
+
+    <main>
+        <p id="loadingState" role="status">
+            Memuat detail booth...
+        </p>
+
+        <p id="errorState" role="alert" hidden></p>
+
+        <section id="boothContent" hidden>
+            <section aria-labelledby="boothName">
+                <h2 id="boothName">Nama Booth</h2>
+
+                <p id="boothEvent"></p>
+                <p id="boothLocation"></p>
+                <p id="boothStatus"></p>
+            </section>
+
+            <section aria-labelledby="alumniTitle">
+                <h2 id="alumniTitle">Alumni di Booth Ini</h2>
+
+                <p id="emptyAlumni" hidden>
+                    Informasi alumni belum tersedia.
+                </p>
+
+                <div id="alumniList">
+            
+                </div>
+            </section>
+
+            <section aria-labelledby="materialsTitle">
+                <h2 id="materialsTitle">Materi Booth</h2>
+
+                <section aria-labelledby="publicMaterialsTitle">
+                    <h3 id="publicMaterialsTitle">Materi Publik</h3>
+
+                    <p id="emptyPublicMaterials" hidden>
+                        Belum ada materi publik.
+                    </p>
+
+                    <div id="publicMaterials">
+                
+                    </div>
+                </section>
+
+                <section aria-labelledby="lockedMaterialsTitle">
+                    <h3 id="lockedMaterialsTitle">Materi Khusus Booth</h3>
+
+                    <p id="lockedMaterialsInfo" hidden></p>
+
+                    <div id="lockedMaterials">
+    
+                    </div>
+
+                    <div id="scannerSection" hidden>
+                        <p>
+                            Kunjungi booth dan scan QR untuk membuka materi
+                            yang terkunci.
+                        </p>
+
+                        <a href="/scan-booth" id="scannerLink">
+                            Buka Scanner
+                        </a>
+                    </div>
+                </section>
+            </section>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```

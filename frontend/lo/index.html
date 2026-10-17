@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard LO - CGTK 2027</title>
+</head>
+<body>
+
+    <header>
+        <h1>Dashboard LO</h1>
+        <p>Divisi Pendidikan</p>
+        <p>Mode baca saja</p>
+
+        <nav>
+            <a href="index.html" aria-current="page">
+                Alumni Dampingan
+            </a>
+            <a href="statistik/index.html">
+                Statistik Booth
+            </a>
+        </nav>
+    </header>
+    <main>
+        <section aria-labelledby="pageTitle">
+            <h2 id="pageTitle">Alumni Dampingan</h2>
+            <p>Daftar alumni yang menjadi tanggung jawab LO.</p>
+
+            <p>
+                Total alumni:
+                <strong id="totalAlumni">0</strong>
+            </p>
+        </section>
+
+        <section aria-label="Status pemuatan data">
+            <p id="loadingState" role="status" hidden>
+                Memuat data alumni...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Belum ada alumni dampingan. Hubungi Super Admin.
+            </p>
+        </section>
+
+        <section aria-labelledby="listTitle">
+            <h2 id="listTitle">Daftar Alumni</h2>
+
+            <div id="alumniList">
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
