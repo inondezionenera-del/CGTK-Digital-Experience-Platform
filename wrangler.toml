@@ -7,9 +7,18 @@ compatibility_flags = ["nodejs_compat"]
 # Secrets (SUPABASE_SERVICE_ROLE_KEY, QR_SIGNING_SECRET) are set with:
 #   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 #   wrangler secret put QR_SIGNING_SECRET
+# ENVIRONMENT di sini production, bukan development, walaupun ini blok vars
+# bawaan. Alasannya: scripts/deploy.sh memanggil `wrangler deploy` tanpa
+# `--env production`, jadi blok inilah yang benar-benar terpasang di API yang
+# dipakai peserta. Selama isinya "development", CORS di API produksi menerima
+# origin http://localhost:<port> mana pun dengan credentials: true.
+#
+# Kerja lokal tidak terpengaruh: `wrangler dev` membaca .dev.vars, dan di sana
+# ENVIRONMENT tetap development.
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
+ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev"
 
 # Rate limiting and offline-sync idempotency use KV.
 # Create with: wrangler kv namespace create RATE_LIMIT
@@ -26,3 +35,4 @@ name = "cgtk-api"
 [env.production.vars]
 ENVIRONMENT = "production"
 SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
+ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev"
