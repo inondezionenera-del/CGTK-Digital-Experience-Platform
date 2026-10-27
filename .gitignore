@@ -31,3 +31,7 @@ loadtest/token-uji.json
 loadtest/qr-uji.json
 loadtest/token-peran.json
 loadtest/hasil.json
+
+# Layanan Python sudah pindah ke repo CGTK-Layanan-Kuis.
+__pycache__/
+*.py[cod]
