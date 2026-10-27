@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Acara - CGTK 2027</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap">
+
+    <!-- CSS khusus halaman ini, jangan dicampur dengan style.css admin -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="schedule-page">
+
+    <!-- Bar atas dari desain Figma -->
+    <div class="schedule-top">
+        <div class="schedule-brand">
+            <span class="schedule-avatar" aria-hidden="true"></span>
+            <img class="schedule-logo" src="assets/logo-cgtk.png" alt="CGTK" onerror="this.remove()">
+        </div>
+        <nav class="schedule-nav" aria-label="Menu utama">
+            <a href="index.html">Beranda</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="scanner.html">Scanner</a>
+        </nav>
+    </div>
+
+    <!-- Kode HTML milikmu, struktur dan id tidak diubah -->
+    <div class="schedule-container">
+
+        <header class="schedule-header">
+            <h1>Jadwal Acara</h1>
+            <p>Ikuti seluruh rangkaian acara CGTK 2027.</p>
+        </header>
+
+        <div id="dayTabs" class="day-tabs"></div>
+
+        <main id="scheduleList" class="schedule-list"></main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

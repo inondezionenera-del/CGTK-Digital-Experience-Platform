@@ -1,0 +1,71 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistik Booth - Dashboard LO</title>
+</head>
+<body>
+
+    <header>
+        <h1>Dashboard LO</h1>
+        <p>Statistik Booth Dampingan</p>
+        <p>Mode baca saja</p>
+
+        <nav>
+            <a href="../index.html">Alumni Dampingan</a>
+            <a href="index.html" aria-current="page">Statistik Booth</a>
+        </nav>
+    </header>
+
+    <main>
+        <section aria-labelledby="pageTitle">
+            <h2 id="pageTitle">Statistik Booth Dampingan</h2>
+            <p>Ringkasan kunjungan pada booth yang didampingi.</p>
+        </section>
+
+        <section aria-label="Status pemuatan">
+            <p id="loadingState" role="status" hidden>
+                Memuat statistik...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Belum ada data statistik booth.
+            </p>
+
+            <p id="disabledState" role="status" hidden>
+                Statistik sementara dimatikan
+            </p>
+        </section>
+
+        <section id="statsContent" hidden>
+            <section aria-labelledby="summaryTitle">
+                <h2 id="summaryTitle">Ringkasan Hari Ini</h2>
+
+                <p>
+                    Jumlah alumni:
+                    <strong id="totalAlumni">-</strong>
+                </p>
+
+                <p>
+                    Total pengunjung:
+                    <strong id="totalVisitors">-</strong>
+                </p>
+            </section>
+
+            <section aria-labelledby="boothTitle">
+                <h2 id="boothTitle">Statistik Per Booth</h2>
+                <div id="boothList"></div>
+            </section>
+        </section>
+
+        <p id="lastUpdated" aria-live="polite"></p>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```

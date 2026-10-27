@@ -1,0 +1,159 @@
+:root {
+    --c-blue: #0048ce;
+    --c-navy: #355075;
+    --c-plum: #803467;
+    --c-red: #ff383c;
+    --c-green: #1f9d55;
+    --c-grey: #757575;
+    --c-card: #fafafa;
+
+    /* Background air dari Figma (export WebP), contoh:
+       --c-water: url("assets/bg-water.webp"); */
+    --c-water: none;
+}
+
+.schedule-page {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, sans-serif;
+    color: var(--c-navy);
+    background-color: #2a9fe8;
+    background-image:
+        var(--c-water),
+        radial-gradient(ellipse at 25% 18%, rgba(255,255,255,.35), transparent 38%),
+        radial-gradient(ellipse at 80% 32%, rgba(255,255,255,.25), transparent 34%),
+        linear-gradient(180deg, #1b6fe0 0%, #2aa4ee 28%, #7fd3ee 55%, #cdeee5 88%);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* ---------- Bar atas ---------- */
+.schedule-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 12px 0; }
+.schedule-brand { display: flex; align-items: center; gap: 4px; }
+.schedule-avatar { width: 28px; height: 28px; border-radius: 50%; background: #d9d9d9; }
+.schedule-logo { height: 28px; }
+.schedule-nav { display: flex; gap: 8px; }
+.schedule-nav a {
+    min-width: 72px; padding: 5px 12px; border-radius: 8px;
+    background: #fff; color: #000; font-size: 12px; font-weight: 700;
+    text-align: center; text-decoration: none;
+}
+
+/* ---------- Judul ---------- */
+.schedule-container { width: min(480px, 100% - 40px); margin: 0 auto; padding-bottom: 64px; }
+
+.schedule-header { margin: 28px 0 20px; text-align: center; }
+
+.schedule-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(40px, 12vw, 68px);
+    font-weight: 800;
+    letter-spacing: -.05em;
+    line-height: 1;
+    text-shadow: 0 6px 4px rgba(0,0,0,.25);
+}
+
+.schedule-header p {
+    margin: 10px 0 0;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+
+/* ---------- Tab hari ---------- */
+.day-tabs { display: flex; gap: 8px; margin-bottom: 28px; overflow-x: auto; padding: 2px 2px 6px; }
+.day-tabs:empty { display: none; }
+
+.day-tab {
+    flex: 1 0 auto;
+    min-width: 96px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 12px;
+    background: #fff;
+    color: #000;
+    font: 700 14px "Inter", sans-serif;
+    box-shadow: 0 4px 4px rgba(0,0,0,.2);
+    cursor: pointer;
+}
+
+.day-tab small { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; color: var(--c-grey); }
+.day-tab.active { background: var(--c-blue); color: #fff; }
+.day-tab.active small { color: #dce8ff; }
+.day-tab:focus-visible, a.tl-scan:focus-visible { outline: 3px solid #fff; box-shadow: 0 0 0 5px var(--c-blue); }
+
+/* ---------- Daftar & kartu ---------- */
+.schedule-list { display: flex; flex-direction: column; gap: 36px; padding-top: 22px; }
+
+.tl-card {
+    position: relative;
+    padding: 0 14px 16px;
+    background: var(--c-card);
+    border: 2px solid var(--c-blue);
+    border-radius: 0 16px 16px 16px;
+    box-shadow: 0 10px 18px rgba(0,0,0,.25);
+}
+
+/* Tab folder: lapisan biru (garis) + lapisan kartu (isi) */
+.tl-card::before, .tl-card::after { content: ""; position: absolute; pointer-events: none; }
+.tl-card::before {
+    left: -2px; top: -22px; width: 102px; height: 24px; background: var(--c-blue);
+    clip-path: polygon(0 100%, 0 12px, 3px 3px, 12px 0, 82px 0, 102px 100%);
+}
+.tl-card::after {
+    left: 0; top: -20px; width: 100px; height: 22px; background: var(--c-card);
+    clip-path: polygon(0 100%, 0 10px, 2px 3px, 10px 0, 79px 0, 97px 100%);
+}
+
+.tl-card-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    padding: 14px 0 6px; border-bottom: 1.5px solid rgba(139,139,139,.5);
+}
+.tl-card-title { margin: 0; font-size: clamp(20px, 6vw, 28px); font-weight: 700; letter-spacing: -.04em; line-height: 1.1; }
+.tl-card-date { flex-shrink: 0; color: var(--c-plum); font-size: clamp(11px, 3vw, 13px); font-weight: 700; letter-spacing: -.02em; }
+
+/* ---------- Sesi di dalam kartu ---------- */
+.tl-session { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: end; padding-top: 14px; }
+.tl-session + .tl-session { margin-top: 14px; border-top: 1px dashed rgba(139,139,139,.5); }
+
+.tl-session-name { grid-column: 1 / -1; margin: 0; color: var(--c-plum); font-size: 13px; font-weight: 700; }
+
+.tl-info {
+    display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none;
+    font-size: clamp(13px, 3.6vw, 16px); font-weight: 500; letter-spacing: -.02em;
+}
+.tl-info li { display: flex; align-items: center; gap: 10px; }
+.tl-info svg { flex-shrink: 0; width: 24px; height: 24px; fill: none; stroke: var(--c-grey); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tl-info .tl-clock { stroke: #444; stroke-width: 4; }
+.tl-time { font-weight: 700; }
+
+.tl-status { font-weight: 700; text-transform: uppercase; }
+.tl-status::before { content: ""; flex-shrink: 0; width: 16px; height: 16px; margin: 0 4px; border-radius: 50%; background: currentColor; }
+.tl-status.is-waiting { color: var(--c-red); }
+.tl-status.is-live    { color: var(--c-green); }
+.tl-status.is-done    { color: var(--c-grey); }
+
+/* ---------- Tombol SCAN ---------- */
+.tl-scan {
+    box-sizing: border-box; display: inline-flex; justify-content: center; align-items: center;
+    min-width: 92px; min-height: 38px; padding: 6px 20px;
+    border: .5px solid #000; border-radius: 20px; background: var(--c-card);
+    box-shadow: 0 4px 4px rgba(0,0,0,.25);
+    color: #000; font-size: 17px; font-weight: 800; letter-spacing: -.03em; text-decoration: none;
+}
+.tl-scan[aria-disabled="true"] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.tl-scan.is-hadir { border-color: var(--c-green); color: var(--c-green); font-size: 14px; }
+
+/* ---------- Loading / kosong / error ---------- */
+.schedule-empty, .schedule-loading, .schedule-error {
+    padding: 20px; border-radius: 16px; background: var(--c-card);
+    text-align: center; font-weight: 600;
+}
+.schedule-error { color: var(--c-red); }
+
+@media (min-width: 700px) {
+    .schedule-top { padding: 20px 32px 0; }
+    .schedule-nav a { min-width: 110px; font-size: 14px; }
+}

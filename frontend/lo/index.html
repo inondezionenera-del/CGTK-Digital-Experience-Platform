@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard LO - CGTK 2027</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Dashboard LO</h1>
+        <p>Divisi Pendidikan</p>
+        <p>Mode baca saja</p>
+
+        <nav>
+            <a href="index.html" aria-current="page">
+                Alumni Dampingan
+            </a>
+            <a href="statistik/index.html">
+                Statistik Booth
+            </a>
+        </nav>
+    </header>
+    <main>
+        <section aria-labelledby="pageTitle">
+            <h2 id="pageTitle">Alumni Dampingan</h2>
+            <p>Daftar alumni yang menjadi tanggung jawab LO.</p>
+
+            <p>
+                Total alumni:
+                <strong id="totalAlumni">0</strong>
+            </p>
+        </section>
+
+        <section aria-label="Status pemuatan data">
+            <p id="loadingState" role="status" hidden>
+                Memuat data alumni...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Belum ada alumni dampingan. Hubungi Super Admin.
+            </p>
+        </section>
+
+        <section aria-labelledby="listTitle">
+            <h2 id="listTitle">Daftar Alumni</h2>
+
+            <div id="alumniList">
+                <div class="card-4">
+    <div class="lo-4"></div>
+    <div class="rectangle-11"></div>
+    <div class="ellipse-2"></div>
+    <div class="ellipse-3"></div>
+    <p class="nama-lorep-universitas-ipsum">
+        <span class="span-01">Nama:</span>
+        <span class="span-02"> </span>
+        <span class="span-03">Lorep<br/></span>
+        <span class="span-04">Universitas: </span>
+        <span class="span-05">IPSUM</span>
+    </p>
+</div>
+            </div>
+        </section>
+    </main>
+
+   
+</body>
+</html>

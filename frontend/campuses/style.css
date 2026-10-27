@@ -1,0 +1,1567 @@
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Arial, sans-serif;
+
+    min-height: 100vh;
+
+    color: #ffffff;
+
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(32, 201, 151, 0.10),
+            transparent 28%
+        ),
+        #061a17;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.page-header {
+    padding: 34px 20px 28px;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(32, 201, 151, 0.14),
+            transparent 40%
+        ),
+        linear-gradient(
+            180deg,
+            #0b302b 0%,
+            #061a17 100%
+        );
+}
+
+.header-content {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.header-label {
+    display: inline-block;
+
+    margin-bottom: 10px;
+    padding: 6px 10px;
+
+    border: 1px solid rgba(32, 201, 151, 0.25);
+    border-radius: 20px;
+
+    background: rgba(32, 201, 151, 0.08);
+
+    color: #62e5bf;
+
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+}
+
+header h1 {
+    margin-bottom: 10px;
+
+    font-size: 30px;
+    line-height: 1.2;
+}
+
+header p {
+    color: #a8c5c0;
+
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+main {
+    width: 100%;
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 0 16px 60px;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-section {
+    margin-top: 4px;
+}
+
+.search-box {
+    position: relative;
+
+    width: 100%;
+}
+
+#searchInput {
+    width: 100%;
+    height: 54px;
+
+    padding: 0 48px;
+
+    border: 1px solid #24534c;
+    border-radius: 16px;
+
+    outline: none;
+
+    background: #0d2925;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+#searchInput::placeholder {
+    color: #7faaa3;
+}
+
+#searchInput:focus {
+    border-color: #20c997;
+
+    background: #0f302b;
+
+    box-shadow:
+        0 0 0 4px rgba(32, 201, 151, 0.10);
+}
+
+.search-icon {
+    position: absolute;
+
+    left: 18px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #62e5bf;
+
+    font-size: 23px;
+
+    pointer-events: none;
+}
+
+.clear-search {
+    position: absolute;
+
+    right: 10px;
+    top: 50%;
+
+    width: 34px;
+    height: 34px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    transform: translateY(-50%);
+
+    border: none;
+    border-radius: 50%;
+
+    background: #16443c;
+
+    color: #b9d3ce;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+.clear-search.show {
+    display: flex;
+}
+
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+.filter-section {
+    position: relative;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin: 18px 0 20px;
+
+    padding-bottom: 4px;
+
+    overflow: visible;
+}
+
+.filter {
+    flex-shrink: 0;
+
+    min-width: 90px;
+    min-height: 44px;
+
+    padding: 0 17px;
+
+    border: 1px solid #24534c;
+    border-radius: 12px;
+
+    background: #0d2925;
+
+    color: #a8c5c0;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.filter:hover {
+    border-color: #20c997;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+.filter.active {
+    border-color: #20c997;
+
+    background: #20c997;
+
+    color: #05231d;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   RESULT INFO
+   Disembunyikan karena tidak diperlukan
+========================================================= */
+
+.result-info {
+    display: none !important;
+}
+
+
+/* =========================================================
+   RUMPUN WRAPPER
+========================================================= */
+
+.rumpun-wrapper {
+    position: relative;
+
+    flex-shrink: 0;
+
+    z-index: 10000;
+}
+
+
+/* =========================================================
+   RUMPUN BUTTON
+========================================================= */
+
+.rumpun-button {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    min-width: 112px;
+}
+
+#rumpunArrow {
+    display: inline-block;
+
+    font-size: 10px;
+
+    transition:
+        transform 0.2s ease;
+}
+
+.rumpun-wrapper.open #rumpunArrow {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   RUMPUN MENU
+   Penting:
+   menggunakan FIXED karena JS menentukan posisi
+   menggunakan getBoundingClientRect()
+========================================================= */
+
+.rumpun-menu {
+    position: fixed;
+
+    left: var(--rumpun-left, 205px);
+    top: var(--rumpun-top, 250px);
+
+    width: 190px;
+    max-width: calc(100vw - 24px);
+
+    padding: 8px;
+
+    border: 1px solid #285b51;
+    border-radius: 14px;
+
+    background: #08251f;
+
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.55);
+
+    z-index: 999999;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transform:
+        translateY(-8px)
+        scale(0.98);
+
+    transform-origin: top left;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        visibility 0.2s ease;
+}
+
+
+/* =========================================================
+   RUMPUN MENU ACTIVE
+========================================================= */
+
+.rumpun-menu.show {
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+/* =========================================================
+   RUMPUN OPTION
+   Bisa dipakai untuk:
+   .rumpun-option
+   atau
+   button[data-rumpun]
+========================================================= */
+
+.rumpun-option,
+.rumpun-menu button[data-rumpun] {
+    width: 100%;
+
+    min-height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 12px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #b9d3ce;
+
+    font-size: 13px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.rumpun-option:hover,
+.rumpun-menu button[data-rumpun]:hover {
+    background: rgba(32, 201, 151, 0.10);
+
+    color: #62e5bf;
+}
+
+.rumpun-option.active,
+.rumpun-menu button[data-rumpun].active {
+    background: rgba(32, 201, 151, 0.15);
+
+    color: #20c997;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   CAMPUS LIST
+========================================================= */
+
+.campus-list {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    gap: 22px;
+
+    margin-top: 4px;
+}
+
+
+/* =========================================================
+   CAMPUS CARD
+========================================================= */
+
+.campus-card {
+    position: relative;
+
+    width: 100%;
+    min-width: 0;
+
+    padding: 20px;
+
+    border: 1px solid #1e5048;
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #123b35,
+            #0a2622
+        );
+
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.campus-card:hover {
+    border-color: #20c997;
+
+    box-shadow:
+        0 16px 35px rgba(0, 0, 0, 0.30);
+
+    transform: translateY(-3px);
+}
+
+
+/* =========================================================
+   CARD TOP
+========================================================= */
+
+.card-top {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.campus-icon {
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid rgba(32, 201, 151, 0.08);
+    border-radius: 15px;
+
+    background:
+        rgba(32, 201, 151, 0.12);
+
+    font-size: 25px;
+}
+
+.campus-type {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(32, 201, 151, 0.10);
+
+    color: #62e5bf;
+
+    font-size: 10px;
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   CAMPUS INFO
+========================================================= */
+
+.campus-card h2 {
+    margin-bottom: 10px;
+
+    font-size: 19px;
+    line-height: 1.35;
+}
+
+.campus-city {
+    margin-bottom: 12px;
+
+    color: #9bbdb7;
+
+    font-size: 14px;
+}
+
+.campus-rumpun {
+    margin-bottom: 14px;
+
+    color: #7dd3c0;
+
+    font-size: 13px;
+}
+
+.campus-alumni {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 8px 11px;
+
+    border-radius: 9px;
+
+    background:
+        rgba(32, 201, 151, 0.10);
+
+    color: #62e5bf;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   DETAIL BUTTON
+========================================================= */
+
+.campus-button {
+    width: 100%;
+
+    min-height: 46px;
+
+    margin-top: 18px;
+
+    padding: 0 16px;
+
+    border: none;
+    border-radius: 15px;
+
+    background: #20c997;
+
+    color: #05231d;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.campus-button:hover {
+    background: #27dca7;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 10px 25px rgba(32, 201, 151, 0.18);
+}
+
+.campus-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.empty-state {
+    grid-column: 1 / -1;
+
+    padding: 45px 20px;
+
+    text-align: center;
+
+    border: 1px dashed #24534c;
+    border-radius: 18px;
+
+    background: #0a2622;
+
+    color: #7faaa3;
+}
+
+.empty-state-icon {
+    margin-bottom: 12px;
+
+    font-size: 35px;
+}
+
+.empty-state h3 {
+    margin-bottom: 7px;
+
+    color: #d7eee9;
+
+    font-size: 17px;
+}
+
+.empty-state p {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   DETAIL OVERLAY
+========================================================= */
+
+.detail-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    padding: 10px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background:
+        rgba(1, 13, 11, 0.82);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    z-index: 99999;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        visibility 0.25s ease;
+}
+
+.detail-overlay.show {
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+
+/* =========================================================
+   DETAIL MODAL
+========================================================= */
+
+.detail-modal {
+    position: relative;
+
+    width: 100%;
+    max-width: 850px;
+    max-height: 94vh;
+
+    overflow-y: auto;
+
+    padding: 18px;
+
+    border: 1px solid #285b51;
+    border-radius: 22px;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(32, 201, 151, 0.11),
+            transparent 35%
+        ),
+        linear-gradient(
+            145deg,
+            #0c302a,
+            #061f1b
+        );
+
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.65);
+
+    transform:
+        translateY(20px)
+        scale(0.97);
+
+    transition:
+        transform 0.25s ease;
+}
+
+.detail-overlay.show .detail-modal {
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+/* =========================================================
+   DETAIL CLOSE
+========================================================= */
+
+.detail-close {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #285b51;
+    border-radius: 50%;
+
+    background: rgba(13, 48, 42, 0.95);
+
+    color: #ffffff;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+    z-index: 10;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.detail-close:hover {
+    background: #17473e;
+
+    border-color: #20c997;
+
+    transform: rotate(90deg);
+}
+
+
+/* =========================================================
+   DETAIL HERO
+========================================================= */
+
+.detail-hero {
+    padding: 10px 50px 20px 4px;
+
+    border-bottom: 1px solid #19483f;
+}
+
+.detail-hero-top {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 14px;
+}
+
+.detail-logo {
+    width: 64px;
+    height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    padding: 9px;
+
+    border-radius: 17px;
+
+    background:
+        rgba(32, 201, 151, 0.12);
+
+    border: 1px solid
+        rgba(32, 201, 151, 0.10);
+
+    overflow: hidden;
+}
+
+
+/* LOGO KAMPUS */
+
+.detail-logo img {
+    width: 210%;
+    height: 250%;
+
+    object-fit: contain;
+
+    display: block;
+}
+
+.detail-badge {
+    display: inline-block;
+
+    margin-bottom: 7px;
+
+    padding: 5px 8px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(32, 201, 151, 0.11);
+
+    color: #62e5bf;
+
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.detail-title {
+    margin-bottom: 5px;
+
+    font-size: 22px;
+    line-height: 1.25;
+}
+
+.detail-singkatan {
+    color: #7dd3c0;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.detail-location {
+    margin-top: 10px;
+
+    color: #a8c5c0;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   DETAIL STATS
+========================================================= */
+
+.detail-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 7px;
+
+    margin-top: 16px;
+}
+
+.detail-stat {
+    padding: 10px 7px;
+
+    text-align: center;
+
+    border: 1px solid #19483f;
+    border-radius: 11px;
+
+    background:
+        rgba(7, 35, 30, 0.70);
+}
+
+.detail-stat strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #62e5bf;
+
+    font-size: 14px;
+}
+
+.detail-stat span {
+    color: #7faaa3;
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   WEBSITE
+========================================================= */
+
+.website-button {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 46px;
+
+    margin-top: 16px;
+    padding: 12px 16px;
+
+    border-radius: 12px;
+
+    background: #20c997;
+
+    color: #03201b;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    text-decoration: none;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+.website-button:hover {
+    background: #27dca7;
+
+    transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   DETAIL CONTENT
+========================================================= */
+
+.detail-body {
+    padding-top: 18px;
+}
+
+.detail-section {
+    margin-bottom: 13px;
+    padding: 15px;
+
+    border: 1px solid #19483f;
+    border-radius: 15px;
+
+    background:
+        rgba(7, 32, 28, 0.72);
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 13px;
+
+    color: #ffffff;
+
+    font-size: 16px;
+}
+
+.detail-section-title span {
+    color: #62e5bf;
+}
+
+
+/* =========================================================
+   INFO GRID
+========================================================= */
+
+.info-grid {
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    gap: 8px;
+}
+
+.info-row {
+    display: grid;
+
+    grid-template-columns: 100px 1fr;
+
+    gap: 10px;
+
+    padding: 9px 0;
+
+    border-bottom: 1px solid rgba(40, 91, 81, 0.35);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #7faaa3;
+
+    font-size: 12px;
+}
+
+.info-value {
+    color: #d7eee9;
+
+    font-size: 13px;
+
+    word-break: break-word;
+}
+
+
+/* =========================================================
+   BOOTH
+========================================================= */
+
+.booth-card {
+    padding: 13px;
+
+    border: 1px solid #24534c;
+    border-radius: 12px;
+
+    background: #0d302a;
+}
+
+.booth-card + .booth-card {
+    margin-top: 8px;
+}
+
+.booth-name {
+    margin-bottom: 7px;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.booth-detail {
+    color: #9bbdb7;
+
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.booth-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 9px;
+    padding: 5px 9px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(32, 201, 151, 0.11);
+
+    color: #62e5bf;
+
+    font-size: 11px;
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   ALUMNI
+========================================================= */
+
+.alumni-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+.alumni-item {
+    display: flex;
+
+    gap: 11px;
+
+    padding: 11px;
+
+    border: 1px solid #19483f;
+    border-radius: 12px;
+
+    background: #0d302a;
+}
+
+.alumni-photo {
+    width: 45px;
+    height: 45px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    overflow: hidden;
+
+    border-radius: 11px;
+
+    background: #12463c;
+
+    font-size: 20px;
+}
+
+.alumni-photo img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+.alumni-info {
+    min-width: 0;
+}
+
+.alumni-info strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 13px;
+}
+
+.alumni-info span {
+    display: block;
+
+    color: #8fb4ac;
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.alumni-message {
+    margin-top: 4px;
+
+    color: #b9d3ce !important;
+}
+
+
+/* =========================================================
+   MAJOR
+========================================================= */
+
+.major-list {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+.major-item {
+    padding: 8px 10px;
+
+    border: 1px solid #24534c;
+    border-radius: 9px;
+
+    background:
+        rgba(32, 201, 151, 0.08);
+
+    color: #b9d3ce;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   MATERIAL
+========================================================= */
+
+.material-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.material-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 11px;
+
+    border: 1px solid #19483f;
+    border-radius: 11px;
+
+    background: #0d302a;
+
+    color: #d7eee9;
+
+    font-size: 12px;
+
+    text-decoration: none;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.material-item:hover {
+    border-color: #20c997;
+
+    background: #12463c;
+}
+
+.material-icon {
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   DETAIL SCROLLBAR
+========================================================= */
+
+.detail-modal::-webkit-scrollbar {
+    width: 5px;
+}
+
+.detail-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.detail-modal::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+    background: #24534c;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (min-width: 600px) {
+
+    .page-header {
+        padding: 45px 32px 32px;
+    }
+
+    header h1 {
+        font-size: 36px;
+    }
+
+    main {
+        padding:
+            0 24px 60px;
+    }
+
+    .campus-list {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 24px;
+    }
+
+    .campus-card {
+        padding: 22px;
+    }
+
+    .detail-modal {
+        padding: 26px;
+    }
+
+    .detail-title {
+        font-size: 27px;
+    }
+
+    .info-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 900px) {
+
+    .page-header {
+        padding: 55px 40px 38px;
+    }
+
+    header h1 {
+        font-size: 42px;
+    }
+
+    header p {
+        font-size: 15px;
+    }
+
+    main {
+        padding:
+            0 32px 70px;
+    }
+
+    .campus-list {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 26px;
+    }
+
+    .campus-card {
+        padding: 22px;
+    }
+
+    .detail-modal {
+        max-height: 90vh;
+
+        padding: 32px;
+    }
+
+    .detail-title {
+        font-size: 30px;
+    }
+
+    .detail-hero {
+        padding-right: 60px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 599px) {
+
+    .page-header {
+        padding:
+            28px 16px 25px;
+    }
+
+    main {
+        padding:
+            0 12px 50px;
+    }
+
+    header h1 {
+        font-size: 30px;
+    }
+
+    header p {
+        font-size: 14px;
+    }
+
+    /* Filter tetap satu baris dan
+       bisa digeser jika layar sempit */
+
+    .filter-section {
+        display: flex;
+
+        flex-wrap: nowrap;
+
+        overflow-x: auto;
+        overflow-y: visible;
+
+        padding-bottom: 6px;
+
+        scrollbar-width: none;
+    }
+
+    .filter-section::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter {
+        min-width: 82px;
+
+        padding:
+            0 13px;
+    }
+
+    .rumpun-button {
+        min-width: 108px;
+    }
+
+    /* Jarak antar card dibuat lebih lega */
+
+    .campus-list {
+        grid-template-columns: 1fr;
+
+        gap: 24px;
+
+        margin-top: 6px;
+    }
+
+    .campus-card {
+        padding: 20px;
+
+        border-radius: 19px;
+    }
+
+    .campus-card h2 {
+        font-size: 19px;
+    }
+
+    /* Detail */
+
+    .detail-overlay {
+        padding: 8px;
+    }
+
+    .detail-modal {
+        max-height: 95vh;
+
+        padding: 16px;
+
+        border-radius: 20px;
+    }
+
+    .detail-hero {
+        padding:
+            8px 46px 18px 2px;
+    }
+
+    .detail-title {
+        font-size: 21px;
+    }
+
+    .detail-logo {
+        width: 56px;
+        height: 56px;
+
+        font-size: 27px;
+    }
+
+    .detail-stats {
+        gap: 5px;
+    }
+
+    .detail-stat {
+        padding:
+            9px 4px;
+    }
+
+    .info-row {
+        grid-template-columns:
+            85px 1fr;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+    header h1 {
+        font-size: 27px;
+    }
+
+    header p {
+        font-size: 13px;
+    }
+
+    .campus-card {
+        padding: 17px;
+    }
+
+    .campus-card h2 {
+        font-size: 17px;
+    }
+
+    .campus-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .filter {
+        min-width: 78px;
+
+        padding:
+            0 11px;
+
+        font-size: 13px;
+    }
+
+    .rumpun-button {
+        min-width: 102px;
+    }
+}

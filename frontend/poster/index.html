@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Poster Booth - CGTK 2027</title>
+</head>
+<body>
+    <header>
+        <h1>Cetak Poster Booth</h1>
+        <p>Administrasi poster QR untuk seluruh booth CGTK 2027.</p>
+    </header>
+
+    <main>
+        <section aria-labelledby="boothSelectionTitle">
+            <h2 id="boothSelectionTitle">Pilih Booth</h2>
+
+            <div>
+                <button type="button" id="selectAllButton">
+                    Pilih Semua
+                </button>
+
+                <button type="button" id="deselectAllButton">
+                    Batalkan Pilihan
+                </button>
+
+                <button type="button" id="printAllButton">
+                    Cetak Semua
+                </button>
+
+                <button type="button" id="printSelectedButton">
+                    Cetak Pilihan
+                </button>
+            </div>
+
+            <p id="loadingState" role="status">
+                Memuat daftar booth...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Belum ada booth yang tersedia.
+            </p>
+
+            <p id="selectionCount" aria-live="polite">
+                0 booth dipilih
+            </p>
+
+            <form id="boothForm">
+                <div id="boothList">
+                </div>
+            </form>
+        </section>
+        <section aria-labelledby="posterPreviewTitle">
+            <h2 id="posterPreviewTitle">Pratinjau Poster</h2>
+            <p>
+                Setiap poster dicetak pada satu halaman A4.
+                QR berukuran minimal 10 × 10 cm.
+            </p>
+
+            <div id="posterContainer">
+
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
