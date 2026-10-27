@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin Jadwal - CGTK 2027</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <header class="page-header">
+
+        <div class="header-content">
+
+            <span class="header-label">
+                CGTK 2027 • ADMIN
+            </span>
+
+            <h1>
+                Kelola Jadwal
+            </h1>
+
+            <p>
+                Kelola acara dan sesi kegiatan CGTK 2027.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+
+        <!-- =================================================
+             ACARA
+        ================================================== -->
+
+        <section class="section-block">
+
+            <div class="section-header">
+
+                <div>
+
+                    <span class="section-label">
+                        JADWAL
+                    </span>
+
+                    <h2>
+                        Acara
+                    </h2>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="primary-button"
+                    id="addEventButton"
+                >
+                    + Tambah Acara
+                </button>
+
+            </div>
+
+
+            <div
+                id="eventList"
+                class="event-list"
+            >
+                <!-- Acara dibuat oleh JavaScript -->
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SESI
+        ================================================== -->
+
+        <section class="section-block session-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <span class="section-label">
+                        KEGIATAN
+                    </span>
+
+                    <h2>
+                        Sesi
+                    </h2>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="primary-button"
+                    id="addSessionButton"
+                >
+                    + Tambah Sesi
+                </button>
+
+            </div>
+
+
+            <!-- PILIH ACARA -->
+
+            <div class="event-selector">
+
+                <label for="eventSelect">
+                    Acara
+                </label>
+
+                <select id="eventSelect">
+                    <!-- Diisi JS -->
+                </select>
+
+            </div>
+
+
+            <div
+                id="sessionList"
+                class="session-list"
+            >
+                <!-- Sesi dibuat JS -->
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- =====================================================
+         MODAL EVENT
+    ====================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="eventModal"
+        aria-hidden="true"
+    >
+
+        <div class="modal">
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeEventModal"
+            >
+                ×
+            </button>
+
+            <h2 id="eventModalTitle">
+                Tambah Acara
+            </h2>
+
+            <form id="eventForm">
+
+                <input
+                    type="hidden"
+                    id="eventId"
+                >
+
+
+                <label>
+                    Nama Acara
+
+                    <input
+                        type="text"
+                        id="eventName"
+                        required
+                        placeholder="Contoh: Expo Kampus"
+                    >
+                </label>
+
+
+                <label>
+                    Tipe
+
+                    <select
+                        id="eventType"
+                        required
+                    >
+
+                        <option value="PEMBUKAAN">
+                            PEMBUKAAN
+                        </option>
+
+                        <option value="EXPO_KAMPUS">
+                            EXPO_KAMPUS
+                        </option>
+
+                        <option value="EXPO_JURUSAN">
+                            EXPO_JURUSAN
+                        </option>
+
+                        <option value="PENUTUPAN">
+                            PENUTUPAN
+                        </option>
+
+                        <option value="LAINNYA">
+                            LAINNYA
+                        </option>
+
+                    </select>
+                </label>
+
+
+                <div class="form-note">
+
+                    ⚠️ Tipe menentukan bentuk booth.
+
+                    <br><br>
+
+                    EXPO_KAMPUS → booth per kampus.
+
+                    <br>
+
+                    EXPO_JURUSAN → booth per jurusan.
+
+                </div>
+
+
+                <label>
+                    Tanggal
+
+                    <input
+                        type="date"
+                        id="eventDate"
+                        required
+                    >
+                </label>
+
+
+                <label>
+                    Deskripsi
+
+                    <textarea
+                        id="eventDescription"
+                        rows="3"
+                        placeholder="Deskripsi acara..."
+                    ></textarea>
+                </label>
+
+
+                <label>
+                    Urutan
+
+                    <input
+                        type="number"
+                        id="eventOrder"
+                        min="1"
+                        required
+                    >
+                </label>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        id="cancelEventButton"
+                    >
+                        Batal
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Simpan Acara
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MODAL SESSION
+    ====================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="sessionModal"
+        aria-hidden="true"
+    >
+
+        <div class="modal">
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeSessionModal"
+            >
+                ×
+            </button>
+
+            <h2 id="sessionModalTitle">
+                Tambah Sesi
+            </h2>
+
+            <form id="sessionForm">
+
+                <input
+                    type="hidden"
+                    id="sessionId"
+                >
+
+
+                <label>
+                    Acara
+
+                    <select
+                        id="sessionEvent"
+                        required
+                    ></select>
+
+                </label>
+
+
+                <label>
+                    Nama Sesi
+
+                    <input
+                        type="text"
+                        id="sessionName"
+                        required
+                        placeholder="Contoh: Talkshow Alumni"
+                    >
+
+                </label>
+
+
+                <label>
+                    Lokasi
+
+                    <input
+                        type="text"
+                        id="sessionLocation"
+                        required
+                        placeholder="Contoh: Aula Utama"
+                    >
+
+                </label>
+
+
+                <div class="time-grid">
+
+                    <label>
+                        Jam Mulai
+
+                        <input
+                            type="time"
+                            id="sessionStart"
+                            required
+                        >
+                    </label>
+
+
+                    <label>
+                        Jam Selesai
+
+                        <input
+                            type="time"
+                            id="sessionEnd"
+                            required
+                        >
+                    </label>
+
+                </div>
+
+
+                <label>
+                    XP
+
+                    <input
+                        type="number"
+                        id="sessionXP"
+                        min="0"
+                        value="0"
+                        required
+                    >
+                </label>
+
+
+                <label class="checkbox-label">
+
+                    <input
+                        type="checkbox"
+                        id="sessionRequired"
+                    >
+
+                    Wajib Presensi
+
+                </label>
+
+
+                <label>
+                    Urutan
+
+                    <input
+                        type="number"
+                        id="sessionOrder"
+                        min="1"
+                        required
+                    >
+                </label>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        id="cancelSessionButton"
+                    >
+                        Batal
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Simpan Sesi
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MODAL KONFIRMASI TUTUP SESI
+    ====================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="closeSessionConfirm"
+        aria-hidden="true"
+    >
+
+        <div class="confirm-modal">
+
+            <div class="warning-icon">
+                ⚠️
+            </div>
+
+            <h2>
+                Tutup sesi?
+            </h2>
+
+            <p id="closeSessionMessage">
+                Scanner semua panitia akan langsung terkunci
+                untuk sesi ini.
+            </p>
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="cancelCloseSession"
+                >
+                    Batal
+                </button>
+
+                <button
+                    type="button"
+                    class="danger-button"
+                    id="confirmCloseSession"
+                >
+                    Ya, Tutup
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

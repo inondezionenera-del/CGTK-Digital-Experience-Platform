@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Direktori Kampus | CGTK 2027</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="page-header">
+
+        <div class="header-content">
+
+            <span class="header-label">
+                CGTK 2027
+            </span>
+
+            <h1>Direktori Kampus</h1>
+
+            <p>
+                Temukan kampus dan jurusan yang tersedia di CGTK 2027.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main>
+
+        <!-- SEARCH -->
+
+        <section class="search-section">
+
+            <div class="search-box">
+
+                <span class="search-icon">⌕</span>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Cari kampus..."
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    id="clearSearch"
+                    class="clear-search"
+                    aria-label="Hapus pencarian"
+                >
+                    ×
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             FILTER
+        ========================== -->
+
+        <section class="filter-section">
+            
+            <section
+    class="result-info"
+    id="resultInfo">
+
+    <div class="result-icon">
+        🏫
+    </div>
+
+    <div class="result-content">
+
+        <p class="result-count">
+            
+            <span id="resultLabel">kampus ditemukan</span>
+        <p
+            class="result-description"
+            id="resultDescription">
+            Menampilkan semua kampus
+        </p>
+
+    </div>
+
+</section>
+
+            <button
+                type="button"
+                class="filter active"
+                data-type="semua"
+            >
+                Semua
+            </button>
+
+            <button
+                type="button"
+                class="filter"
+                data-type="negeri"
+            >
+                Negeri
+            </button>
+
+            <button
+                type="button"
+                class="filter"
+                data-type="swasta"
+            >
+                Swasta
+            </button>
+
+
+            <!-- RUMPUN -->
+
+            <div class="rumpun-wrapper">
+
+                <button
+                    type="button"
+                    class="filter rumpun-button"
+                    id="rumpunButton"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                >
+                    <span id="rumpunText">Rumpun</span>
+                    <span id="rumpunArrow">▼</span>
+                </button>
+
+
+                <div
+                    class="rumpun-menu"
+                    id="rumpunMenu"
+                >
+
+                    <button
+                        type="button"
+                        data-rumpun="semua"
+                        class="rumpun-option active"
+                    >
+                        Semua Rumpun
+                    </button>
+
+                    <button
+                        type="button"
+                        data-rumpun="teknik"
+                        class="rumpun-option"
+                    >
+                        Teknik
+                    </button>
+
+                    <button
+                        type="button"
+                        data-rumpun="sains"
+                        class="rumpun-option"
+                    >
+                        Sains
+                    </button>
+
+                    <button
+                        type="button"
+                        data-rumpun="bisnis"
+                        class="rumpun-option"
+                    >
+                        Bisnis
+                    </button>
+
+                    <button
+                        type="button"
+                        data-rumpun="sosial"
+                        class="rumpun-option"
+                    >
+                        Sosial
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FILTER INFO -->
+
+        <div class="result-info">
+            <span id="resultCount">0 kampus</span>
+        </div>
+
+
+        <!-- =========================
+             CAMPUS LIST
+        ========================== -->
+
+        <section
+            id="campusList"
+            class="campus-list"
+        >
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         DETAIL MODAL
+    ================================================== -->
+
+    <div
+        id="detailOverlay"
+        class="detail-overlay"
+        aria-hidden="true"
+    >
+
+        <div
+            class="detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="detailTitle"
+        >
+
+            <!-- CLOSE -->
+
+            <button
+                type="button"
+                class="detail-close"
+                id="detailClose"
+                aria-label="Tutup detail"
+            >
+                ×
+            </button>
+
+
+            <!-- DETAIL CONTENT -->
+
+            <div id="detailContent"></div>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
