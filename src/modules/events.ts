@@ -74,6 +74,25 @@ app.get('/sessions/live', async (c) => {
   return ok(c, data ?? []);
 });
 
+/**
+ * GET /events/sessions/admin
+ *
+ * Every session, DRAFT included. The participant-facing `/sessions` hides
+ * drafts on purpose, but that left the session switch unable to do its job:
+ * a session sitting in DRAFT was invisible to the very screen meant to turn it
+ * ACTIVE, so Divisi Acara could prepare a session and then have no way to open
+ * it. This is that screen's source.
+ */
+app.get('/sessions/admin', wajibLogin, butuhIzin('KELOLA_JADWAL', 'SAKLAR_SESI'), async (c) => {
+  const { data, error } = await db(c.env)
+    .from('sessions')
+    .select('id, event_id, nama, lokasi, jam_mulai, jam_selesai, status, xp, wajib_presensi, urutan, events(nama, tanggal, urutan)')
+    .order('urutan');
+
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+  return ok(c, data ?? []);
+});
+
 // =============================================================================
 // ADMIN — events
 // =============================================================================
