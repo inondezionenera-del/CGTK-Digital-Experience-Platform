@@ -1,0 +1,39 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengumuman - CGTK 2027</title>
+</head>
+<body>
+
+    <header>
+        <h1>Pengumuman CGTK 2027</h1>
+        <p>Informasi dan pemberitahuan kegiatan.</p>
+    </header>
+
+    <main>
+        <section aria-labelledby="announcementTitle">
+            <h2 id="announcementTitle">Daftar Pengumuman</h2>
+
+            <p id="loadingState" role="status">
+                Memuat pengumuman...
+            </p>
+
+            <p id="errorState" role="alert" hidden></p>
+
+            <p id="emptyState" role="status" hidden>
+                Belum ada pengumuman.
+            </p>
+
+            <div id="announcementList" aria-live="polite">
+                <!-- Pengumuman dibuat oleh JavaScript. -->
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```

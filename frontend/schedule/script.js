@@ -1,321 +1,87 @@
-// ==========================================
-// KONFIGURASI API
-// ==========================================
 
-const API_BASE_URL = window.CGTK_API_BASE_URL || "";
+const IKON_LOKASI =
+    '<svg viewBox="0 0 43 43" aria-hidden="true"><path d="M16.1 39.4V21.5h10.8v17.9M5.4 16.1 21.5 3.6l16.1 12.5v19.7a3.6 3.6 0 0 1-3.6 3.6H9a3.6 3.6 0 0 1-3.6-3.6z"/></svg>';
 
-
-// ==========================================
-// STATE
-// ==========================================
-
-let events = [];
-let sessions = [];
-let selectedDate = null;
-let refreshTimer = null;
+const IKON_JAM =
+    '<svg class="tl-clock" viewBox="0 0 43 43" aria-hidden="true"><circle cx="21.5" cy="21.5" r="18"/><path d="M21.5 11v10.5l7 3.5"/></svg>';
 
 
 // ==========================================
-// ELEMENT
+// STATUS -> TAMPILAN
+// ACTIVE = berlangsung, CLOSED = selesai,
+// status lain (selain DRAFT) = belum dimulai
 // ==========================================
 
-const dayTabs = document.getElementById("dayTabs");
-const scheduleList = document.getElementById("scheduleList");
+function infoStatus(status) {
 
+    const nilai = String(status || "").toUpperCase();
 
-// ==========================================
-// API
-// ==========================================
-
-async function fetchAPI(endpoint) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
-
-    if (!response.ok) {
-        throw new Error(`Gagal mengambil data: ${response.status}`);
+    if (nilai === "ACTIVE") {
+        return { label: "Sesi berlangsung", css: "is-live", bisaScan: true };
     }
 
-    return await response.json();
+    if (nilai === "CLOSED") {
+        return { label: "Sesi selesai", css: "is-done", bisaScan: false };
+    }
+
+    return { label: "Sesi belum dimulai", css: "is-waiting", bisaScan: false };
 }
 
 
 // ==========================================
-// AMBIL DATA ARRAY
+// KELOMPOKKAN SESI PER EVENT
+// Satu kartu = satu event, isinya satu atau lebih sesi.
+// Urutan kartu mengikuti jam mulai paling awal.
 // ==========================================
 
-function ambilDataArray(response) {
-    if (Array.isArray(response)) {
-        return response;
-    }
+function kelompokkanPerEvent(daftarSesi) {
 
-    if (Array.isArray(response?.data)) {
-        return response.data;
-    }
+    const peta = new Map();
 
-    return [];
-}
+    daftarSesi.forEach(session => {
 
+        const kunci =
+            session.event_id ??
+            session.events?.id ??
+            session.events?.nama ??
+            "acara";
 
-// ==========================================
-// LOAD JADWAL
-// ==========================================
+        if (!peta.has(kunci)) {
+            peta.set(kunci, []);
+        }
 
-async function muatJadwal() {
-    try {
-        tampilkanLoading();
-
-        const [eventsResponse, sessionsResponse] =
-            await Promise.all([
-                fetchAPI("/events"),
-                fetchAPI("/events/sessions")
-            ]);
-
-        events = ambilDataArray(eventsResponse);
-        sessions = ambilDataArray(sessionsResponse);
-
-        prosesJadwal();
-
-    } catch (error) {
-        console.error(error);
-        tampilkanError(error.message);
-    }
-}
-
-
-// ==========================================
-// PROSES JADWAL
-// ==========================================
-
-function prosesJadwal() {
-
-    // Backend sebenarnya sudah menghilangkan DRAFT.
-    // Filter ini menjadi pengaman tambahan di frontend.
-    const sesiTampil = sessions.filter(
-        session => session.status !== "DRAFT"
-    );
-
-    if (sesiTampil.length === 0) {
-
-        dayTabs.innerHTML = "";
-
-        scheduleList.innerHTML = `
-            <div class="schedule-empty">
-                Tidak ada jadwal acara.
-            </div>
-        `;
-
-        return;
-    }
-
-    const tanggal = ambilTanggalUnik(sesiTampil);
-
-    if (!selectedDate || !tanggal.includes(selectedDate)) {
-        selectedDate = tanggal[0];
-    }
-
-    buatDayTabs(tanggal);
-    tampilkanJadwal(selectedDate);
-}
-
-
-// ==========================================
-// AMBIL TANGGAL DARI EVENT
-// ==========================================
-
-function ambilTanggalSession(session) {
-
-    return session.events?.tanggal || null;
-}
-
-
-// ==========================================
-// TANGGAL UNIK
-// ==========================================
-
-function ambilTanggalUnik(sesi) {
-
-    const tanggal = sesi
-        .map(session => ambilTanggalSession(session))
-        .filter(Boolean);
-
-    return [...new Set(tanggal)].sort();
-}
-
-
-// ==========================================
-// TAB HARI
-// ==========================================
-
-function buatDayTabs(tanggal) {
-
-    // Kalau hanya satu hari,
-    // tab tidak perlu ditampilkan.
-    if (tanggal.length <= 1) {
-        dayTabs.innerHTML = "";
-        return;
-    }
-
-    dayTabs.innerHTML = tanggal
-        .map((tanggalAcara, index) => {
-
-            const aktif =
-                tanggalAcara === selectedDate
-                    ? "active"
-                    : "";
-
-            return `
-                <button
-                    type="button"
-                    class="day-tab ${aktif}"
-                    data-date="${tanggalAcara}"
-                >
-                    Hari ${index + 1}
-                    <small>
-                        ${formatTanggal(tanggalAcara)}
-                    </small>
-                </button>
-            `;
-        })
-        .join("");
-
-    document.querySelectorAll(".day-tab")
-        .forEach(button => {
-
-            button.addEventListener("click", () => {
-
-                selectedDate = button.dataset.date;
-
-                buatDayTabs(tanggal);
-                tampilkanJadwal(selectedDate);
-
-            });
-
-        });
-}
-
-
-// ==========================================
-// FORMAT TANGGAL
-// ==========================================
-
-function formatTanggal(tanggal) {
-
-    const date = new Date(`${tanggal}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-        return tanggal;
-    }
-
-    return date.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short"
+        peta.get(kunci).push(session);
     });
+
+    return [...peta.values()];
 }
 
 
 // ==========================================
-// TAMPILKAN JADWAL
+// KARTU EVENT
 // ==========================================
 
-function tampilkanJadwal(tanggal) {
+function buatEventHTML(kelompok) {
 
-    const sesiHariIni = sessions
-        .filter(session => session.status !== "DRAFT")
-        .filter(session => {
-            return ambilTanggalSession(session) === tanggal;
-        })
-        .sort(urutkanSession);
+    const event = kelompok[0].events || {};
 
-    if (sesiHariIni.length === 0) {
-
-        scheduleList.innerHTML = `
-            <div class="schedule-empty">
-                Tidak ada acara pada hari ini.
-            </div>
-        `;
-
-        return;
-    }
-
-    scheduleList.innerHTML = sesiHariIni
-        .map(session => buatSessionHTML(session))
-        .join("");
-}
-
-
-// ==========================================
-// SESSION HTML
-// ==========================================
-
-function buatSessionHTML(session) {
-
-    const namaEvent =
-        session.events?.nama || "Acara";
-
-    const tipeEvent =
-        session.events?.tipe || "";
-
-    const namaSession =
-        session.nama || "Sesi acara";
-
-    const lokasi =
-        session.lokasi || "-";
-
-    const waktu =
-        formatWaktu(
-            session.jam_mulai,
-            session.jam_selesai
-        );
-
-    const statusHTML =
-        buatStatusHTML(session.status);
-
-    const hadirHTML =
-        session.saya_sudah_hadir === true
-            ? `
-                <div class="attendance-status">
-                    ✓ Saya sudah hadir
-                </div>
-            `
-            : "";
+    const tanggal = event.tanggal
+        ? formatTanggal(event.tanggal)
+        : "";
 
     return `
-        <article
-            class="schedule-session status-${String(
-                session.status
-            ).toLowerCase()}"
-        >
+        <article class="tl-card">
 
-            <div class="session-header">
-
-                <span class="event-type">
-                    ${escapeHTML(tipeEvent)}
+            <div class="tl-card-head">
+                <h2 class="tl-card-title">
+                    ${escapeHTML(event.nama || "Acara")}
+                </h2>
+                <span class="tl-card-date">
+                    ${escapeHTML(tanggal)}
                 </span>
-
-                ${statusHTML}
-
             </div>
 
-            <h2>
-                ${escapeHTML(namaEvent)}
-            </h2>
-
-            <h3>
-                ${escapeHTML(namaSession)}
-            </h3>
-
-            <div class="session-detail">
-
-                <span>
-                    🕐 ${escapeHTML(waktu)}
-                </span>
-
-                <span>
-                    📍 ${escapeHTML(lokasi)}
-                </span>
-
-            </div>
-
-            ${hadirHTML}
+            ${kelompok.map(buatSessionHTML).join("")}
 
         </article>
     `;
@@ -323,170 +89,72 @@ function buatSessionHTML(session) {
 
 
 // ==========================================
-// STATUS
+// BARIS SESI
 // ==========================================
 
-function buatStatusHTML(status) {
+function buatSessionHTML(session) {
 
-    if (status === "ACTIVE") {
+    const status = infoStatus(session.status);
 
-        return `
-            <span class="status-badge status-live">
-                🟢 LIVE
-            </span>
+    const namaEvent = session.events?.nama || "";
+
+    // Nama sesi hanya ditampilkan kalau berbeda dari nama event
+    const namaSesiHTML =
+        session.nama && session.nama !== namaEvent
+            ? `<p class="tl-session-name">${escapeHTML(session.nama)}</p>`
+            : "";
+
+    const waktu = formatWaktu(
+        session.jam_mulai,
+        session.jam_selesai
+    );
+
+    let aksiHTML;
+
+    if (session.saya_sudah_hadir === true) {
+
+        aksiHTML = `
+            <span class="tl-scan is-hadir">✓ Sudah hadir</span>
+        `;
+
+    } else if (status.bisaScan) {
+
+        // Sesuaikan alamat scanner dan nama field id jika berbeda
+        aksiHTML = `
+            <a
+                class="tl-scan"
+                href="scanner.html?session=${encodeURIComponent(session.id)}"
+            >SCAN</a>
+        `;
+
+    } else {
+
+        aksiHTML = `
+            <span class="tl-scan" role="link" aria-disabled="true">SCAN</span>
         `;
     }
 
-    if (status === "CLOSED") {
+    return `
+        <div class="tl-session">
 
-        return `
-            <span class="status-badge status-closed">
-                Selesai
-            </span>
-        `;
-    }
+            ${namaSesiHTML}
 
-    return "";
-}
+            <ul class="tl-info">
+                <li>
+                    ${IKON_LOKASI}
+                    <span>${escapeHTML(session.lokasi || "-")}</span>
+                </li>
+                <li>
+                    ${IKON_JAM}
+                    <span class="tl-time">${escapeHTML(waktu)}</span>
+                </li>
+                <li class="tl-status ${status.css}">
+                    ${status.label}
+                </li>
+            </ul>
 
+            ${aksiHTML}
 
-// ==========================================
-// FORMAT WAKTU
-// ==========================================
-
-function formatWaktu(mulai, selesai) {
-
-    if (!mulai) {
-        return "-";
-    }
-
-    const waktuMulai = formatJam(mulai);
-
-    if (!selesai) {
-        return waktuMulai;
-    }
-
-    const waktuSelesai = formatJam(selesai);
-
-    return `${waktuMulai} — ${waktuSelesai}`;
-}
-
-
-// ==========================================
-// FORMAT JAM
-// ==========================================
-
-function formatJam(value) {
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false
-    });
-}
-
-
-// ==========================================
-// URUTKAN SESSION
-// ==========================================
-
-function urutkanSession(a, b) {
-
-    const waktuA = a.jam_mulai || "";
-    const waktuB = b.jam_mulai || "";
-
-    return new Date(waktuA) - new Date(waktuB);
-}
-
-
-// ==========================================
-// LOADING
-// ==========================================
-
-function tampilkanLoading() {
-
-    scheduleList.innerHTML = `
-        <div class="schedule-loading">
-            Memuat jadwal...
         </div>
     `;
 }
-
-
-// ==========================================
-// ERROR
-// ==========================================
-
-function tampilkanError(pesan) {
-
-    scheduleList.innerHTML = `
-        <div class="schedule-error">
-            ${escapeHTML(pesan)}
-        </div>
-    `;
-}
-
-
-// ==========================================
-// ESCAPE HTML
-// ==========================================
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-// ==========================================
-// AUTO REFRESH 60 DETIK
-// ==========================================
-
-function mulaiAutoRefresh() {
-
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-    }
-
-    refreshTimer = setInterval(() => {
-
-        if (!document.hidden) {
-            muatJadwal();
-        }
-
-    }, 60000);
-}
-
-
-// ==========================================
-// SAAT USER KEMBALI KE TAB
-// ==========================================
-
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (!document.hidden) {
-            muatJadwal();
-        }
-
-    }
-);
-
-
-// ==========================================
-// START
-// ==========================================
-
-muatJadwal();
-mulaiAutoRefresh();

@@ -1,0 +1,107 @@
+/* =========================================
+   STYLE UNTUK CARD ALUMNI (DARI FIGMA)
+   ========================================= */
+
+.card-4 {
+  width: 279px;
+  height: 301px;
+  position: relative;
+}
+
+.lo-4 {
+  width: 279px;
+  height: 301px;
+  left: 0px;
+  top: 0px;
+  position: absolute;
+  background: #FAFAFA;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+}
+
+.rectangle-11 {
+  width: 168px;
+  height: 179px;
+  left: 56px;
+  top: 48px;
+  position: absolute;
+  background: #C0C0C0;
+  border-radius: 12px;
+}
+
+.ellipse-2 {
+  width: 73px;
+  height: 74px;
+  left: 107px;
+  top: 89px;
+  position: absolute;
+  background: #FAFAFA;
+}
+
+.ellipse-3 {
+  width: 111px;
+  height: 109px;
+  left: 88px;
+  top: 172px;
+  position: absolute;
+  background: #FAFAFA;
+  border-radius: 9999px;
+}
+
+.nama-lorep-universitas-ipsum {
+  width: 220px;
+  height: 50px;
+  left: 44px;
+  top: 233px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  margin: 0; /* Menghilangkan margin bawaan paragraf */
+}
+
+/* Tipografi di dalam Card */
+.span-01 {
+  color: black;
+  font-size: 17px;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  line-height: 22px;
+  word-wrap: break-word;
+}
+
+.span-02 {
+  color: black;
+  font-size: 17px;
+  font-family: 'SF Pro', sans-serif;
+  font-weight: 400;
+  line-height: 22px;
+  word-wrap: break-word;
+}
+
+.span-03 {
+  color: black;
+  font-size: 17px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  line-height: 22px;
+  word-wrap: break-word;
+}
+
+.span-04 {
+  color: black;
+  font-size: 17px;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  line-height: 22px;
+  word-wrap: break-word;
+}
+
+.span-05 {
+  color: black;
+  font-size: 17px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  line-height: 22px;
+  word-wrap: break-word;
+}
