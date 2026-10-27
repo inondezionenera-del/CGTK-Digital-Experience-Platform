@@ -1,9 +1,14 @@
 from pydantic import BaseModel
 
-class LeaderboardItem(BaseModel):
-    rank: int
+
+class BarisPeringkat(BaseModel):
+    peringkat: int
     participant_id: str
+    nama: str
     total_xp: int
 
-    class Config:
-        from_attributes = True
+
+class PeringkatResponse(BaseModel):
+    beku: bool = False
+    dibekukan_at: str | None = None
+    baris: list[BarisPeringkat] = []

@@ -1,37 +1,50 @@
-from fastapi import APIRouter, Depends
+"""Papan peringkat.
+
+Perhitungannya dilakukan fungsi hitung_leaderboard() di database, bukan di sini.
+Satu alasan: aturan pemutus seri (XP tertinggi, lalu yang lebih dulu
+mencapainya, lalu lebih banyak booth, lalu lebih dulu mendaftar) harus punya
+satu definisi. Kalau ditulis ulang di Python, dua tempat itu akan berselisih
+pada suatu hari, dan yang dipersoalkan adalah siapa yang menang.
+"""
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
-from typing import List
 
 from app.database import get_db
-from app.models.gamification import PointTransaction
-from app.schemas.leaderboard import LeaderboardItem
+from app.keamanan import Pemanggil, verifikasi
+from app.schemas.leaderboard import BarisPeringkat, PeringkatResponse
 
-router = APIRouter(
-    prefix="/leaderboard",
-    tags=["Leaderboard"]
-)
+router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 
-# Endpoint: Ambil Top Leaderboard
-@router.get("", response_model=List[LeaderboardItem])
-def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
-    # Grouping berdasarkan participant_id & hitung SUM(amount), urutkan dari yang terbesar
-    results = db.query(
-        PointTransaction.participant_id,
-        func.sum(PointTransaction.amount).label("total_xp")
-    ).group_by(
-        PointTransaction.participant_id
-    ).order_by(
-        desc("total_xp")
-    ).limit(limit).all()
 
-    # Permeringkatan leaderboard
-    leaderboard_list = []
-    for rank, item in enumerate(results, start=1):
-        leaderboard_list.append(LeaderboardItem(
-            rank=rank,
-            participant_id=item.participant_id,
-            total_xp=item.total_xp
-        ))
+@router.get("", response_model=PeringkatResponse)
+def peringkat(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _: Pemanggil = Depends(verifikasi),
+):
+    beku = db.execute(
+        text(
+            "select dibekukan_at from leaderboard_freeze "
+            "order by dibekukan_at desc limit 1"
+        )
+    ).scalar()
 
-    return leaderboard_list
+    baris = db.execute(
+        text("select * from hitung_leaderboard(:limit)"), {"limit": limit}
+    ).mappings().all()
+
+    return PeringkatResponse(
+        beku=beku is not None,
+        dibekukan_at=beku.isoformat() if beku else None,
+        baris=[
+            BarisPeringkat(
+                peringkat=i + 1,
+                participant_id=str(b.get("participant_id")),
+                nama=str(b.get("nama") or "Peserta"),
+                total_xp=int(b.get("total_xp") or 0),
+            )
+            for i, b in enumerate(baris)
+        ],
+    )

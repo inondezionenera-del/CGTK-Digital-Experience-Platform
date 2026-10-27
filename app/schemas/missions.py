@@ -1,23 +1,22 @@
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 
-class MissionResponse(BaseModel):
+
+class MisiResponse(BaseModel):
     id: int
-    judul: str
-    deskripsi: Optional[str] = None
-    xp_reward: int
-    tipe: str
-    is_completed: bool = False
+    nama: str
+    deskripsi: str | None = None
+    tipe: str | None = None
+    xp: int = 0
+    # Dipakai frontend untuk mengelompokkan misi per acara, supaya peserta tidak
+    # datang di hari yang salah.
+    event_id: int | None = None
+    status: str = "BELUM"
+    progress: int = 0
 
     class Config:
         from_attributes = True
 
-class KlaimMisiRequest(BaseModel):
+
+class SelesaikanMisiRequest(BaseModel):
     participant_id: str
     mission_id: int
-
-class KlaimMisiResponse(BaseModel):
-    message: str
-    mission_id: int
-    xp_diperoleh: int
