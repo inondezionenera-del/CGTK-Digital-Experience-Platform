@@ -156,6 +156,18 @@ app.get('/saya', wajibLogin, async (c) => {
     const { data: xp } = await db(c.env).rpc('total_xp', { p_participant_id: p.participantId });
     const { data: level } = await db(c.env).rpc('level_peserta', { p_total_xp: xp ?? 0 });
 
+    // Ambang level berikutnya. level_peserta cuma mengembalikan level yang
+    // sedang dipegang, dan dengan itu saja bar kemajuan di Dashboard tidak
+    // bisa digambar: tidak ada yang tahu sisa XP menuju level berikutnya.
+    // null berarti sudah di level tertinggi, dan bar-nya digambar penuh.
+    const { data: lanjut } = await db(c.env)
+      .from('levels')
+      .select('nomor, nama, xp_minimum')
+      .gt('xp_minimum', xp ?? 0)
+      .order('xp_minimum')
+      .limit(1)
+      .maybeSingle();
+
     peserta = {
       id: p.participantId,
       status_bayar: reg?.status ?? null,
@@ -164,6 +176,7 @@ app.get('/saya', wajibLogin, async (c) => {
       qr_aktif: Boolean(part?.qr_token),
       total_xp: xp ?? 0,
       level,
+      level_berikutnya: lanjut ?? null,
     };
   }
 
