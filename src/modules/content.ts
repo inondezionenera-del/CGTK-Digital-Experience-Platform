@@ -125,12 +125,23 @@ app.get('/sponsors', async (c) => {
     }
   }
 
-  const { data } = await db(c.env)
+  // JSON.stringify, bukan array JavaScript biasa.
+  //
+  // `penempatan` adalah kolom jsonb. Dengan array biasa, supabase-js menyusun
+  // filter PostgREST `cs.{landing}`, yaitu literal array Postgres, dan untuk
+  // kolom jsonb itu dijawab 400 "invalid input syntax for type json". Yang
+  // benar `cs.["landing"]`. Akibatnya bukan error yang kelihatan: `data` jadi
+  // null, keempat tier keluar kosong, dan Landing menampilkan nol sponsor
+  // seolah-olah memang belum ada yang terjual. Di database sudah ada enam.
+  const { data, error } = await db(c.env)
     .from('sponsors')
     .select('id, nama, logo_url, tier, url, urutan')
     .eq('aktif', true)
-    .contains('penempatan', [penempatan])
+    .contains('penempatan', JSON.stringify([penempatan]))
     .order('urutan');
+
+  // Tanpa baris ini, kegagalan query tadi tidak meninggalkan jejak apa pun.
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
 
   const dikelompokkan: Record<string, unknown[]> = {
     PLATINUM: [], GOLD: [], SILVER: [], MEDIA_PARTNER: [],

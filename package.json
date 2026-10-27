@@ -16,7 +16,8 @@
     "db:push": "node scripts/migrate.mjs",
     "db:reset": "node scripts/migrate.mjs --reset",
     "db:seed": "node scripts/migrate.mjs --seed-only",
-    "db:contoh": "node scripts/jalankan-sql.mjs db/manual/data-contoh.sql"
+    "db:contoh": "node scripts/jalankan-sql.mjs db/manual/data-contoh.sql",
+    "db:konten": "node scripts/jalankan-sql.mjs db/manual/konten-gamifikasi.sql"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
