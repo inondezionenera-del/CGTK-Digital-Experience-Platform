@@ -25,12 +25,15 @@ import { loginOpsional } from '../middleware/auth';
  * frontend can build against it.
  */
 
-/** Prefixes Danar owns. Everything else stays in this Worker. */
+/**
+ * Awalan yang masih diteruskan ke layanan Python.
+ *
+ * quiz, missions, achievements, dan leaderboard DIKELUARKAN dari daftar ini
+ * dan sekarang dijawab langsung oleh src/modules/gamifikasi.ts. Keempatnya
+ * dipakai halaman peserta, dan tidak boleh ikut mati selama layanan Python
+ * belum di-deploy. Tiga yang tersisa belum dipanggil halaman mana pun.
+ */
 export const PREFIKS_DANAR = [
-  'quiz',
-  'missions',
-  'achievements',
-  'leaderboard',
   'levels',
   'cosmetics',
   'reports',

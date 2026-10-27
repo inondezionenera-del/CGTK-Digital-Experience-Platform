@@ -19,6 +19,7 @@ import admin from './modules/admin';
 import lo from './modules/lo';
 import alumni from './modules/alumni';
 import proxy, { PREFIKS_DANAR } from './modules/proxy';
+import gamifikasi from './modules/gamifikasi';
 
 /**
  * Route table.
@@ -148,8 +149,21 @@ app.route('/events', events);
 app.route('/lo', lo);
 app.route('/alumni', alumni);
 
-// Danar's modules, in his own Python service, reached through this Worker so the
-// frontend sees one origin and one token.
+/**
+ * Kuis, misi, achievement, papan peringkat.
+ *
+ * Dijawab di Worker ini, bukan diteruskan ke layanan Python. Alasannya ada di
+ * src/modules/gamifikasi.ts: tanpa ini keempat awalan itu menjawab 503 selama
+ * layanan Python belum di-deploy, dan bentuk jawaban FastAPI juga tidak cocok
+ * dengan amplop { sukses, data } yang dibaca frontend.
+ *
+ * Didaftarkan sebelum proxy supaya yang di sini yang menang.
+ */
+app.route('/', gamifikasi);
+
+// Sisa modul Danar yang masih di layanan Python-nya, lewat Worker ini supaya
+// frontend tetap melihat satu origin dan satu token. Tidak ada halaman yang
+// memanggilnya sekarang, jadi 503-nya tidak terlihat peserta.
 for (const p of PREFIKS_DANAR) app.route(`/${p}`, proxy);
 
 // Mounted at the root: these own top-level nouns of their own

@@ -17,7 +17,8 @@
     "db:reset": "node scripts/migrate.mjs --reset",
     "db:seed": "node scripts/migrate.mjs --seed-only",
     "db:contoh": "node scripts/jalankan-sql.mjs db/manual/data-contoh.sql",
-    "db:konten": "node scripts/jalankan-sql.mjs db/manual/konten-gamifikasi.sql"
+    "db:konten": "node scripts/jalankan-sql.mjs db/manual/konten-gamifikasi.sql",
+    "uji:gamifikasi": "node loadtest/asap-gamifikasi.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
