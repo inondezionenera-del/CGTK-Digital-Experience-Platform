@@ -101,39 +101,69 @@ fi
 
 echo
 echo "=== 4/5  Menaikkan Worker ==="
-npx wrangler deploy 2>&1 | tee /tmp/cgtk-deploy.log
+echo
+echo "  Kalau wrangler bertanya soal subdomain workers.dev, jawab YES."
+echo "  Tanpa subdomain itu Worker terunggah tapi tidak punya alamat."
+echo
 
-ALAMAT=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/cgtk-deploy.log | head -1 || true)
+# Dijalankan langsung, TIDAK lewat pipe.
+#
+# Percobaan pertama memakai `| tee`, dan itu membuat stdin bukan terminal.
+# Wrangler lalu tidak bisa bertanya, memilih jawaban cadangan "no" sendiri,
+# dan berhenti dengan: "You need to register a workers.dev subdomain before
+# publishing". Workernya terunggah tapi tidak punya alamat sama sekali.
+npx wrangler deploy
+
+echo
+echo "=== 5/5  Alamat Worker ==="
+echo "  Lihat keluaran di atas, cari baris yang berbentuk:"
+echo "    https://cgtk-api.<sesuatu>.workers.dev"
+echo
+read -r -p "  Tempel alamat itu di sini lalu Enter: " ALAMAT
+ALAMAT=$(printf '%s' "$ALAMAT" | tr -d ' ' | sed 's:/*$::')
 
 if [ -z "$ALAMAT" ]; then
   echo
-  echo "  Worker naik, tapi alamatnya tidak terbaca dari catatan di atas."
-  echo "  Lihat sendiri di dasbor Cloudflare, lalu lanjut ke langkah 4 secara manual."
+  echo "  Dilewati. Kamu bisa menjalankan skrip ini lagi kapan saja."
   exit 0
 fi
 
 echo
-echo "=== 5/5  Mengetes ==="
-echo "  $ALAMAT/health"
-curl -s --max-time 20 "$ALAMAT/health" || true
+echo "  Mengetes $ALAMAT/health"
+curl -s --max-time 25 "$ALAMAT/health" || true
 echo
-echo "  $ALAMAT/api/v1/events"
-curl -s --max-time 20 "$ALAMAT/api/v1/events" || true
+echo "  Mengetes $ALAMAT/api/v1/events"
+curl -s --max-time 25 "$ALAMAT/api/v1/events" || true
 echo
+
+# Ditulis ke berkas supaya tidak hilang waktu jendela terminal ditutup.
+TUJUAN="$HOME/Desktop/CGTK-env-frontend.txt"
+URL=$(grep '^SUPABASE_URL=' .dev.vars | cut -d= -f2- | tr -d '')
+ANON=$(grep '^SUPABASE_ANON_KEY=' .dev.vars | cut -d= -f2- | tr -d '')
+
+cat > "$TUJUAN" <<BERKAS
+# Isi .env untuk Fariz, Haqi, dan RIJAL.
+# Kirim empat baris di bawah sebagai teks di chat, bukan sebagai berkas.
+# Mereka yang membuat berkas .env-nya sendiri di folder repo masing-masing.
+
+VITE_SUPABASE_URL=$URL
+VITE_SUPABASE_ANON_KEY=$ANON
+VITE_API_BASE=$ALAMAT/api/v1
+VITE_SENTRY_DSN=
+BERKAS
 
 cat <<PESAN
 
 -------------------------------------------------------------------
-Kalau /health menjawab  "status":"ok"  berarti beres.
+Kalau /health menjawab  "status":"ok"  berarti Worker sudah hidup.
 
-Kirim baris ini ke Fariz, Haqi, dan RIJAL:
+Empat baris .env untuk tim sudah ditulis ke:
+  Desktop\CGTK-env-frontend.txt
 
-  VITE_API_BASE=$ALAMAT/api/v1
+Buka berkas itu, salin isinya, tempel di grup sebagai teks.
 
-Kalau /events masih menjawab  {"sukses":true,"data":[]}  berarti
-databasenya masih kosong. Jalankan:
-
-  npm run db:contoh
+Kalau /events menjawab  {"sukses":true,"data":[]}  berarti databasenya
+masih kosong. Jalankan:  npm run db:contoh
 -------------------------------------------------------------------
 
 PESAN

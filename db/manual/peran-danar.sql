@@ -32,14 +32,28 @@
 
 \set ON_ERROR_STOP on
 
-do $$
-begin
-  if not exists (select 1 from pg_roles where rolname = 'cgtk_kuis') then
-    execute format('create role cgtk_kuis login password %L', :'sandi');
-  else
-    execute format('alter role cgtk_kuis password %L', :'sandi');
-  end if;
-end $$;
+-- The password is spliced in out here, not inside a DO block, and that is the
+-- whole reason this is shaped so awkwardly.
+--
+-- psql substitutes :'sandi' while reading the file, but it does NOT look inside
+-- dollar-quoted text: everything between $$ and $$ is passed to the server
+-- untouched. A `do $$ ... :'sandi' ... $$` therefore reaches Postgres with the
+-- colon still in it, and fails with `syntax error at or near ":"`. That is
+-- exactly how this file failed the first time it was ever run.
+--
+-- So the statement is built as an ordinary string, where substitution does
+-- happen, and executed with \gexec. quote_literal wraps the value in quotes
+-- safely, including a password containing a quote of its own.
+
+-- Create it only if it is missing.
+select 'create role cgtk_kuis login password ' || quote_literal(:'sandi')
+where not exists (select 1 from pg_roles where rolname = 'cgtk_kuis')
+\gexec
+
+-- Then set the password unconditionally, so re-running this file rotates it
+-- for a role that already existed.
+select 'alter role cgtk_kuis login password ' || quote_literal(:'sandi')
+\gexec
 
 -- Connect and see the schema. Nothing else is implied by this.
 grant connect on database postgres to cgtk_kuis;

@@ -13,9 +13,9 @@ SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
 
 # Rate limiting and offline-sync idempotency use KV.
 # Create with: wrangler kv namespace create RATE_LIMIT
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT"
-# id = "REPLACE_ME"
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "b6f19f64a1c94b2b85e5e60e44e8ed0b"
 
 [observability]
 enabled = true
