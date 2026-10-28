@@ -23,6 +23,14 @@ export interface Env {
   ENVIRONMENT: 'development' | 'production';
   ALLOWED_ORIGINS?: string;
 
+  // Pembatas laju bawaan Cloudflare, satu per jenis endpoint. Opsional supaya
+  // pengujian lokal dan vitest tetap jalan tanpa harus menyediakannya.
+  BATAS_UMUM?: PembatasLaju;
+  BATAS_SCAN?: PembatasLaju;
+  BATAS_AUTH?: PembatasLaju;
+  BATAS_CEK?: PembatasLaju;
+  BATAS_SYNC?: PembatasLaju;
+
   /**
    * Base URL of Danar's Python service (quiz, missions, achievements, levels,
    * cosmetics, reports). Requests to those prefixes are forwarded there.
@@ -37,6 +45,11 @@ export interface Env {
 }
 
 /** Authenticated caller, attached to the request context by the auth middleware. */
+/** Binding pembatas laju bawaan Cloudflare. */
+export interface PembatasLaju {
+  limit(opsi: { key: string }): Promise<{ success: boolean }>;
+}
+
 export interface Pengguna {
   id: string;
   email: string;
