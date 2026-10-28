@@ -66,9 +66,19 @@ app.get('/sessions', loginOpsional, async (c) => {
 });
 
 app.get('/sessions/live', async (c) => {
+  // status IKUT dikirim, walaupun saringannya sudah memastikan semuanya ACTIVE.
+  //
+  // Layar scanner memilih sesi dari daftar ini lalu memeriksa
+  // sesiAktif.status === 'ACTIVE' sebelum membuka kamera. Selama kolom itu
+  // tidak ikut dikirim, nilainya undefined, perbandingannya selalu salah, dan
+  // KAMERA SCANNER TIDAK PERNAH TERBUKA: panitia cuma melihat tulisan sesi
+  // ditutup untuk sesi yang jelas-jelas sedang berjalan.
+  //
+  // Ketahuan waktu membuka halaman scanner di browser sungguhan dan melihat
+  // lencana status di daftar sesi tampil kosong.
   const { data } = await db(c.env)
     .from('sessions')
-    .select('id, nama, lokasi, jam_mulai, jam_selesai, xp, events(nama, tipe)')
+    .select('id, nama, lokasi, status, jam_mulai, jam_selesai, xp, events(nama, tipe)')
     .eq('status', 'ACTIVE')
     .order('urutan');
   return ok(c, data ?? []);

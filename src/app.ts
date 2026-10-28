@@ -4,6 +4,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import type { Env, Variables } from './env';
 import { tangkapError, tidakDitemukan } from './middleware/error';
 import { batasi, BATAS } from './middleware/ratelimit';
+import { loginOpsional } from './middleware/auth';
 import { db } from './lib/db';
 
 import auth from './modules/auth';
@@ -93,6 +94,27 @@ app.use('*', async (c, next) => {
     u: c.get('pengguna')?.id ?? null,
   }));
 });
+
+/**
+ * Identitas pemanggil, dipasang SEBELUM pembatas laju. Urutannya yang penting.
+ *
+ * Pembatas laju memakai id pengguna sebagai kunci dan jatuh ke alamat IP kalau
+ * tidak ada. Selama ini wajibLogin cuma dipasang per rute di dalam modul, jadi
+ * saat pembatas laju berjalan belum ada satu pun yang menaruh pengguna di
+ * context: kuncinya SELALU alamat IP, untuk semua orang.
+ *
+ * Di hari acara semua panitia dan lima ratus peserta berada di satu WiFi
+ * venue, dan satu WiFi berarti satu alamat IP. Artinya mereka semua berbagi
+ * satu jatah 120 permintaan per menit, dan aplikasinya akan menjawab 429 ke
+ * semua orang beberapa menit setelah acara dimulai.
+ *
+ * Ketahuan waktu menguji halaman admin lewat browser: berpindah belasan
+ * halaman dalam satu menit sudah cukup untuk kena.
+ *
+ * loginOpsional membiarkan yang anonim lewat, jadi halaman publik tidak ikut
+ * terkunci. Yang anonim tetap dibatasi per IP, dan memang begitu seharusnya.
+ */
+app.use('*', loginOpsional);
 
 // A blanket ceiling. Tighter per-route limits are applied inside the modules
 // that need them.

@@ -95,10 +95,24 @@ async function muatPengguna(env: Env, userId: string): Promise<Pengguna> {
 /** Rejects anonymous callers. */
 export const wajibLogin: MiddlewareHandler<{ Bindings: Env; Variables: Variables }> =
   async (c, next) => {
+    // Sudah dimuat loginOpsional yang dipasang global di app.ts? Pakai itu.
+    //
+    // Tanpa ini, tiap permintaan ke endpoint yang butuh login memverifikasi
+    // JWT dua kali dan mengambil baris pengguna dua kali dari database: sekali
+    // di middleware global, sekali di sini. Dua kali kerja untuk jawaban yang
+    // sama persis, di tiap permintaan, sepanjang hari acara.
+    if (c.get('pengguna')) {
+      await next();
+      return;
+    }
+
     const header = c.req.header('Authorization') ?? '';
     const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!token) throw new AppError('TIDAK_LOGIN');
 
+    // Sampai di sini berarti tokennya ADA tapi loginOpsional tidak berhasil
+    // memakainya. Diverifikasi ulang supaya yang keluar pesan yang tepat,
+    // misalnya TOKEN_KEDALUWARSA, bukan TIDAK_LOGIN yang menyesatkan.
     const klaim = await verifikasiToken(token, c.env.SUPABASE_JWT_SECRET);
     c.set('pengguna', await muatPengguna(c.env, klaim.sub));
     await next();

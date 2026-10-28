@@ -255,6 +255,113 @@ app.get('/points/admin/kewajaran', wajibLogin, wajibSuperAdmin, async (c) => {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
+// GET /admin/ringkasan
+//
+// Angka untuk dashboard panitia. Sebelum ini tidak ada endpoint semacam ini
+// sama sekali, jadi halaman /admin cuma bisa jadi daftar tautan: tidak ada
+// satu pun angka yang bisa ditampilkan.
+//
+// Semua dihitung dengan count head, bukan menarik barisnya lalu menghitung
+// panjang array. Lima ratus peserta yang ditarik utuh cuma untuk diambil
+// jumlahnya adalah cara paling mudah membuat dashboard ini lambat justru di
+// hari yang paling ramai.
+//
+// Izinnya longgar dengan sengaja: siapa pun yang punya salah satu izin
+// operasional boleh melihat ringkasannya. Yang dikembalikan cuma JUMLAH,
+// tidak ada satu pun nama atau sekolah peserta, jadi tidak ada yang bocor
+// walaupun yang membuka cuma pemindai.
+// -----------------------------------------------------------------------------
+// LIHAT_DASHBOARD SENGAJA tidak ada di daftar ini. Namanya terdengar seperti
+// izin admin, tapi itu izin PESERTA untuk membuka dashboard-nya sendiri.
+// Memasukkannya membuat endpoint ini dijawab 200 untuk semua peserta; sudah
+// terjadi sekali dan ketahuan waktu diuji dengan token peserta sungguhan.
+app.get('/admin/ringkasan', wajibLogin, butuhIzin(
+  'TANDAI_LUNAS', 'SCAN_PRESENSI', 'SAKLAR_SESI', 'KELOLA_JADWAL',
+  'KELOLA_BOOTH', 'LIHAT_ANALITIK', 'PENGATURAN_SISTEM',
+), async (c) => {
+  const d = db(c.env);
+  const awalHariIni = new Date();
+  awalHariIni.setHours(0, 0, 0, 0);
+  const sejak = awalHariIni.toISOString();
+
+  // Ditulis lugas satu per satu, bukan lewat pembantu generik. Tipe builder
+  // PostgREST berubah begitu .eq() dipanggil, dan membungkusnya cuma membuat
+  // kode yang harus ditipu dengan cast di tiap pemanggilan.
+  //
+  // head: true dengan count: 'exact' artinya server hanya mengirim angkanya,
+  // tanpa satu baris pun. Lima ratus peserta yang ditarik utuh cuma untuk
+  // dihitung panjangnya adalah cara paling mudah membuat dashboard ini lambat
+  // justru di hari yang paling ramai.
+  const H = { count: 'exact' as const, head: true };
+
+  const [
+    pendaftar, lunas, menunggu, dibatalkan,
+    hadirHariIni, kunjunganHariIni,
+    boothAktif, boothDraf,
+    sesiAktif, sesiDraf,
+    alumniAktif, alumniDiundang,
+  ] = await Promise.all([
+    d.from('registrations').select('*', H),
+    d.from('registrations').select('*', H).eq('status', 'LUNAS'),
+    d.from('registrations').select('*', H).eq('status', 'MENUNGGU_PEMBAYARAN'),
+    d.from('registrations').select('*', H).eq('status', 'DIBATALKAN'),
+    d.from('attendances').select('*', H).gte('waktu_terima', sejak),
+    d.from('booth_visits').select('*', H).gte('waktu_terima', sejak).eq('dibatalkan', false),
+    d.from('booths').select('*', H).eq('status', 'ACTIVE'),
+    d.from('booths').select('*', H).eq('status', 'DRAFT'),
+    d.from('sessions').select('*', H).eq('status', 'ACTIVE'),
+    d.from('sessions').select('*', H).eq('status', 'DRAFT'),
+    d.from('representatives').select('*', H).eq('status', 'AKTIF'),
+    d.from('representatives').select('*', H).eq('status', 'DIUNDANG'),
+  ]);
+
+  const n = (r: { count: number | null }) => r.count ?? 0;
+
+  // Sesi yang sedang dibuka, untuk ditulis namanya di dashboard. Panitia yang
+  // membuka halaman ini di tengah acara ingin tahu sesi mana yang hidup, bukan
+  // cuma berapa banyak.
+  const { data: sesiHidup } = await d
+    .from('sessions')
+    .select('id, nama, lokasi')
+    .eq('status', 'ACTIVE')
+    .order('urutan')
+    .limit(5);
+
+  // Setelan pembayaran yang masih kosong. Ini yang paling sering jadi sebab
+  // peserta tidak bisa membayar, dan paling mudah terlewat karena tidak
+  // memunculkan error di mana pun.
+  const { data: setelanBayar } = await d
+    .from('settings')
+    .select('kunci, nilai')
+    .eq('kelompok', 'bayar');
+
+  const bayarKosong = (setelanBayar ?? [])
+    .filter((s) => !s.nilai && s.kunci !== 'prefill_entry_id')
+    .map((s) => s.kunci);
+
+  return ok(c, {
+    pendaftaran: {
+      total: n(pendaftar),
+      lunas: n(lunas),
+      menunggu: n(menunggu),
+      dibatalkan: n(dibatalkan),
+    },
+    hari_ini: {
+      presensi: n(hadirHariIni),
+      kunjungan_booth: n(kunjunganHariIni),
+    },
+    booth: { aktif: n(boothAktif), draf: n(boothDraf) },
+    sesi: { aktif: n(sesiAktif), draf: n(sesiDraf), sedang_hidup: sesiHidup ?? [] },
+    alumni: { aktif: n(alumniAktif), diundang: n(alumniDiundang) },
+    perlu_perhatian: {
+      setelan_bayar_kosong: bayarKosong,
+      booth_draf: n(boothDraf),
+      alumni_belum_masuk: n(alumniDiundang),
+    },
+  });
+});
+
+// -----------------------------------------------------------------------------
 // GET /users/panitia
 //
 // Daftar akun panitia, untuk layar yang perlu memilih orang: menugaskan LO ke

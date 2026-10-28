@@ -63,5 +63,13 @@ export const BATAS = {
   scan:      { nama: 'scan',   maks: 30,  jendela: 60 },
   sync:      { nama: 'sync',   maks: 5,   jendela: 60 },
   cekStatus: { nama: 'cek',    maks: 10,  jendela: 60 },
-  umum:      { nama: 'umum',   maks: 120, jendela: 60 },
+  // 240, bukan 120.
+  //
+  // Sekarang kuncinya per pengguna, bukan per alamat IP, jadi angka ini jatah
+  // satu orang. Satu halaman di aplikasi ini memanggil dua sampai empat
+  // endpoint, dashboard panitia menyegarkan diri tiap menit, dan pengumuman
+  // ditanya tiap tiga puluh detik. Panitia yang berpindah belasan layar dalam
+  // satu menit di hari acara sudah cukup untuk menembus 120, dan sudah
+  // terjadi waktu menguji lewat browser.
+  umum:      { nama: 'umum',   maks: 240, jendela: 60 },
 } as const;
