@@ -28,14 +28,16 @@ import { loginOpsional } from '../middleware/auth';
 /**
  * Awalan yang masih diteruskan ke layanan Python.
  *
- * quiz, missions, achievements, dan leaderboard DIKELUARKAN dari daftar ini
- * dan sekarang dijawab langsung oleh src/modules/gamifikasi.ts. Keempatnya
- * dipakai halaman peserta, dan tidak boleh ikut mati selama layanan Python
- * belum di-deploy. Tiga yang tersisa belum dipanggil halaman mana pun.
+ * quiz, missions, achievements, leaderboard, dan cosmetics DIKELUARKAN dari
+ * daftar ini dan sekarang dijawab langsung oleh src/modules/gamifikasi.ts.
+ * Semuanya dipakai halaman peserta, dan tidak boleh ikut mati selama layanan
+ * Python belum di-deploy.
+ *
+ * Dua yang tersisa belum dipanggil halaman mana pun: /levels sudah tercakup
+ * /auth/saya, dan /reports tumpang tindih dengan /exports yang sudah ada.
  */
 export const PREFIKS_DANAR = [
   'levels',
-  'cosmetics',
   'reports',
 ] as const;
 

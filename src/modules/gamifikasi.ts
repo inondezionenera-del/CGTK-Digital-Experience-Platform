@@ -506,6 +506,149 @@ app.get('/leaderboard', wajibLogin, async (c) => {
 });
 
 // =============================================================================
+// KOSMETIK
+//
+// Hadiah yang tidak memberi keuntungan apa pun selain tampilan: warna nama,
+// bingkai foto, latar paspor. Sebelumnya diteruskan ke layanan Python dan
+// menjawab 503, padahal tabelnya sudah terisi tiga belas baris dan skemanya
+// lengkap sampai kolom dipakai.
+//
+// Dua jalan terbuka, dan keduanya berbeda sifatnya:
+//
+//   syarat_level   terbuka sendiri begitu XP-nya cukup. Dihitung saat diminta,
+//                  tidak disimpan, supaya tidak ada yang perlu menyinkronkan.
+//   syarat_top15   diberikan sekali saat pemenang disahkan, dan ditulis ke
+//                  participant_cosmetics supaya TETAP miliknya. Mengikatnya ke
+//                  peringkat langsung akan membuat kosmetiknya berkedip hilang
+//                  dan muncul sepanjang hari saat orang bergeser di papan.
+//
+// Yang terkunci tetap dikirim lengkap dengan syaratnya. Itu satu-satunya
+// alasan orang mengejarnya; menyembunyikannya sampai terbuka membuatnya tidak
+// berguna sebagai dorongan.
+// =============================================================================
+
+interface BarisKosmetik {
+  id: number;
+  tipe: string;
+  nama: string;
+  aset_url: string | null;
+  nilai: string | null;
+  syarat_level: number | null;
+  syarat_top15: boolean;
+}
+
+app.get('/cosmetics', wajibLogin, async (c) => {
+  const p = c.get('pengguna');
+  const pid = p.participantId;
+  if (!pid) throw new AppError('BUKAN_PESERTA');
+
+  const { data: semua, error } = await db(c.env)
+    .from('cosmetics')
+    .select('id, tipe, nama, aset_url, nilai, syarat_level, syarat_top15')
+    .eq('aktif', true)
+    .order('tipe')
+    .order('syarat_level', { nullsFirst: true });
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  const { data: milik } = await db(c.env)
+    .from('participant_cosmetics')
+    .select('cosmetic_id, dipakai')
+    .eq('participant_id', pid);
+
+  const petaMilik = new Map((milik ?? []).map((m) => [m.cosmetic_id, m.dipakai]));
+
+  const { data: xp } = await db(c.env).rpc('total_xp', { p_participant_id: pid });
+  const { data: level } = await db(c.env).rpc('level_peserta', { p_total_xp: xp ?? 0 });
+  const nomorLevel = (level as { nomor?: number } | null)?.nomor ?? 1;
+
+  return ok(c, {
+    level: nomorLevel,
+    total_xp: xp ?? 0,
+    daftar: ((semua ?? []) as BarisKosmetik[]).map((k) => {
+      const diberikan = petaMilik.has(k.id);
+      const cukupLevel = k.syarat_level !== null && nomorLevel >= k.syarat_level;
+      return {
+        id: k.id,
+        tipe: k.tipe,
+        nama: k.nama,
+        aset_url: k.aset_url,
+        nilai: k.nilai,
+        syarat_level: k.syarat_level,
+        syarat_top15: k.syarat_top15,
+        terbuka: diberikan || cukupLevel,
+        dipakai: petaMilik.get(k.id) === true,
+      };
+    }),
+  });
+});
+
+const skemaPakai = z.object({
+  cosmetic_id: z.coerce.number().int().positive(),
+});
+
+app.post('/cosmetics/pakai', wajibLogin, async (c) => {
+  const p = c.get('pengguna');
+  const pid = p.participantId;
+  if (!pid) throw new AppError('BUKAN_PESERTA');
+
+  const badan = skemaPakai.safeParse(await c.req.json().catch(() => ({})));
+  if (!badan.success) throw new AppError('DATA_TIDAK_VALID');
+
+  const { data: k } = await db(c.env)
+    .from('cosmetics')
+    .select('id, tipe, syarat_level, syarat_top15, aktif')
+    .eq('id', badan.data.cosmetic_id)
+    .maybeSingle();
+  if (!k || !k.aktif) throw new AppError('TIDAK_DITEMUKAN');
+
+  // Syaratnya diperiksa DI SINI, bukan cuma di layar. Tanpa ini siapa pun
+  // bisa memakai kosmetik juara dengan satu permintaan buatan sendiri, dan
+  // satu-satunya hadiah lima belas besar kehilangan artinya.
+  const { data: punya } = await db(c.env)
+    .from('participant_cosmetics')
+    .select('cosmetic_id')
+    .eq('participant_id', pid)
+    .eq('cosmetic_id', k.id)
+    .maybeSingle();
+
+  if (!punya) {
+    if (k.syarat_top15) {
+      throw new AppError('TIDAK_BERHAK', undefined,
+        'Kosmetik ini cuma untuk lima belas besar.');
+    }
+    const { data: xp } = await db(c.env).rpc('total_xp', { p_participant_id: pid });
+    const { data: level } = await db(c.env).rpc('level_peserta', { p_total_xp: xp ?? 0 });
+    const nomor = (level as { nomor?: number } | null)?.nomor ?? 1;
+    if (k.syarat_level !== null && nomor < k.syarat_level) {
+      throw new AppError('TIDAK_BERHAK', undefined,
+        `Terbuka di level ${k.syarat_level}. Level kamu sekarang ${nomor}.`);
+    }
+  }
+
+  // Satu yang dipakai per tipe. Dimatikan dulu semuanya di tipe yang sama,
+  // baru yang dipilih dinyalakan; dua warna nama sekaligus tidak punya arti.
+  await db(c.env)
+    .from('participant_cosmetics')
+    .update({ dipakai: false })
+    .eq('participant_id', pid)
+    .eq('tipe', k.tipe);
+
+  const { error } = await db(c.env)
+    .from('participant_cosmetics')
+    .upsert({
+      participant_id: pid,
+      cosmetic_id: k.id,
+      tipe: k.tipe,
+      dipakai: true,
+      terbuka_at: new Date().toISOString(),
+    }, { onConflict: 'participant_id,cosmetic_id' });
+
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  return ok(c, { cosmetic_id: k.id, tipe: k.tipe, dipakai: true });
+});
+
+// =============================================================================
 // PEMBEKUAN DAN PENGESAHAN PEMENANG
 //
 // Fungsi databasenya sudah ada sejak migration 0009 dan sudah benar, tapi
