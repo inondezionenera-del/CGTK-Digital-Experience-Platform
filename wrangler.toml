@@ -15,10 +15,17 @@ compatibility_flags = ["nodejs_compat"]
 #
 # Kerja lokal tidak terpengaruh: `wrangler dev` membaca .dev.vars, dan di sana
 # ENVIRONMENT tetap development.
+# Domain cgtk.my.id sudah didaftarkan di sini walau DNS-nya belum menyala.
+#
+# Urutannya memang harus begitu. Kalau domainnya diarahkan ke Worker lebih dulu
+# sementara origin-nya belum terdaftar, SETIAP permintaan dari halaman itu
+# ditolak CORS, dan gejalanya di browser peserta bukan pesan error melainkan
+# halaman yang memuat dengan semua datanya kosong. Selama domainnya belum ada,
+# baris ini tidak melonggarkan apa pun: tidak ada halaman yang bisa memakainya.
 [vars]
 ENVIRONMENT = "production"
 SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
-ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev"
+ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev,https://cgtk.my.id,https://www.cgtk.my.id"
 
 # Rate limiting and offline-sync idempotency use KV.
 # Create with: wrangler kv namespace create RATE_LIMIT
@@ -79,4 +86,4 @@ name = "cgtk-api"
 [env.production.vars]
 ENVIRONMENT = "production"
 SUPABASE_URL = "https://jqffpyeuuawuiyhilwzk.supabase.co"
-ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev"
+ALLOWED_ORIGINS = "https://cgtk-web.inondezionenera.workers.dev,https://cgtk.my.id,https://www.cgtk.my.id"

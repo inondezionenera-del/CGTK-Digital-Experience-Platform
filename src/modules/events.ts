@@ -40,7 +40,10 @@ app.get('/sessions', loginOpsional, async (c) => {
 
   let q = db(c.env)
     .from('sessions')
-    .select('id, nama, lokasi, jam_mulai, jam_selesai, status, xp, urutan, events!inner(id, nama, tipe, tanggal)')
+    // event_id IKUT dipilih. Tanpa dia, halaman Jadwal di frontend
+    // menyaring dengan s.event_id === a.id terhadap undefined, dan setiap
+    // acara tampil sebagai "belum ada sesi" walau sesinya ACTIVE semua.
+    .select('id, nama, lokasi, jam_mulai, jam_selesai, status, xp, urutan, event_id, events!inner(id, nama, tipe, tanggal)')
     .neq('status', 'DRAFT')     // drafts are not shown to participants at all
     .order('urutan');
 
