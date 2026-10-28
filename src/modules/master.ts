@@ -6,6 +6,7 @@ import { AppError } from '../lib/errors';
 import { ok, dibuat } from '../lib/respond';
 import { wajibLogin } from '../middleware/auth';
 import { butuhIzin } from '../middleware/rbac';
+import { satu } from '../lib/relasi';
 
 /**
  * Master data: campuses, majors, the link between them, and alumni.
@@ -283,6 +284,98 @@ const skemaUndang = z.object({
   major_id: z.coerce.number().int().positive(),
   angkatan: z.coerce.number().int().min(1990).max(2100).optional(),
   kontak: z.string().max(40).optional(),
+});
+
+// -----------------------------------------------------------------------------
+// GET /representatives/admin
+//
+// Daftar alumni untuk panitia, TERMASUK yang masih berstatus DIUNDANG.
+//
+// GET /representatives yang sudah ada bersifat publik dan hanya menampilkan
+// yang AKTIF, karena dia dipakai halaman kampus yang dilihat peserta.
+// Akibatnya panitia tidak punya cara melihat siapa saja yang sudah diundang
+// tapi belum pernah masuk, padahal justru itu yang perlu ditagih sebelum hari
+// acara.
+//
+// email_undangan ikut, dan itu disengaja: tanpa emailnya panitia tidak bisa
+// menghubungi orang yang undangannya belum dipakai. Endpoint ini di balik izin
+// UNDANG_ALUMNI, bukan terbuka.
+// -----------------------------------------------------------------------------
+app.get('/representatives/admin', wajibLogin, butuhIzin('UNDANG_ALUMNI'), async (c) => {
+  const status = (c.req.query('status') ?? '').trim().toUpperCase();
+  const cari = (c.req.query('cari') ?? '').trim();
+
+  let q = db(c.env)
+    .from('representatives')
+    .select('id, email_undangan, status, angkatan, kontak, bio, foto_url, user_id, universities(id, nama, singkatan), majors(id, nama), users(nama)')
+    .order('status')
+    .order('id');
+
+  if (['DIUNDANG', 'AKTIF', 'NONAKTIF'].includes(status)) q = q.eq('status', status);
+  if (cari) q = q.ilike('email_undangan', `%${cari}%`);
+
+  const { data, error } = await q;
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  return ok(c, (data ?? []).map((r) => ({
+    id: r.id,
+    email_undangan: r.email_undangan,
+    status: r.status,
+    angkatan: r.angkatan,
+    kontak: r.kontak,
+    bio: r.bio,
+    foto_url: r.foto_url,
+    sudah_masuk: Boolean(r.user_id),
+    nama: satu<{ nama: string }>(r.users)?.nama ?? null,
+    kampus: satu<{ nama: string; singkatan: string }>(r.universities) ?? null,
+    jurusan: satu<{ nama: string }>(r.majors) ?? null,
+  })));
+});
+
+// -----------------------------------------------------------------------------
+// PATCH /representatives/admin/:id
+//
+// Panitia memperbaiki data alumni: kampus, jurusan, angkatan, kontak, dan
+// status kehadirannya.
+//
+// Yang TIDAK bisa diubah dari sini: email_undangan dan user_id. Email undangan
+// adalah kunci pencocokan saat alumni pertama kali masuk; mengubahnya sesudah
+// akunnya tersambung akan memutus hubungan itu tanpa pesan error apa pun.
+// user_id diisi sistem saat alumni masuk, bukan oleh tangan.
+// -----------------------------------------------------------------------------
+const skemaUbahAlumni = z.object({
+  university_id: z.coerce.number().int().positive().optional(),
+  major_id: z.coerce.number().int().positive().optional(),
+  angkatan: z.coerce.number().int().min(1990).max(2100).nullable().optional(),
+  kontak: z.string().max(40).nullable().optional(),
+  bio: z.string().max(1000).nullable().optional(),
+  status: z.enum(['DIUNDANG', 'AKTIF', 'NONAKTIF']).optional(),
+});
+
+app.patch('/representatives/admin/:id', wajibLogin, butuhIzin('UNDANG_ALUMNI'), async (c) => {
+  const p = c.get('pengguna');
+  const id = Number(c.req.param('id'));
+  const body = skemaUbahAlumni.parse(await c.req.json());
+
+  const { data: lama } = await db(c.env)
+    .from('representatives').select('*').eq('id', id).maybeSingle();
+  if (!lama) throw new AppError('ALUMNI_TIDAK_DITEMUKAN');
+
+  const { data, error } = await db(c.env)
+    .from('representatives').update(body).eq('id', id)
+    .select('id, status').maybeSingle();
+
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+  if (!data) throw new AppError('ALUMNI_TIDAK_DITEMUKAN');
+
+  await rpc(c.env, 'catat_audit', {
+    p_user_id: p.id, p_aksi: 'UBAH_ALUMNI',
+    p_tabel: 'representatives', p_record_id: String(id),
+    p_sebelum: { status: lama.status, university_id: lama.university_id, major_id: lama.major_id },
+    p_sesudah: body,
+  });
+
+  return ok(c, data);
 });
 
 app.post('/representatives/admin/undang', wajibLogin, butuhIzin('UNDANG_ALUMNI'), async (c) => {

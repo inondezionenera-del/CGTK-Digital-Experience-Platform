@@ -192,7 +192,19 @@ app.get('/admin/belum-lunas', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) =
   // tingkat lebih dalam. Versi yang menyambung langsung dijawab PostgREST
   // dengan "Could not find a relationship between 'registrations' and
   // 'participants'".
-  const baris = (data ?? []).map((r) => {
+  // Bentuk hasil embed bersarang PostgREST tidak bisa disimpulkan tipenya,
+  // jadi dibentuk di sini sekali, bukan dengan cast tersebar di tiap baris.
+  interface BarisMentah {
+    id: string;
+    kode_registrasi: string;
+    status: string;
+    profil_lengkap: boolean;
+    created_at: string;
+    users: unknown;
+    payments: unknown;
+  }
+
+  const baris = ((data ?? []) as unknown as BarisMentah[]).map((r) => {
     const u = satu<{ nama: string; participants: unknown }>(r.users);
     const pt = satu<{ asal_sekolah: string; kelas: string }>(u?.participants);
     return {
@@ -206,6 +218,125 @@ app.get('/admin/belum-lunas', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) =
   });
 
   return halaman(c, baris, count ?? 0, hal, per);
+});
+
+// -----------------------------------------------------------------------------
+// GET /admin/payments/peserta
+//
+// Satu daftar berisi SEMUA peserta, apa pun statusnya, untuk layar Pendaftaran
+// & Pembayaran.
+//
+// Yang sudah ada cuma /admin/belum-lunas, dan itu sengaja hanya menampilkan
+// yang menunggu dibayar. Akibatnya tidak ada satu tempat pun untuk menjawab
+// pertanyaan paling sering ditanyakan panitia: siapa saja yang SUDAH membayar.
+// Untuk mengetahuinya orang harus mengekspor CSV dan membukanya di Excel.
+//
+// Pembayaran di sistem ini MANUAL: panitia yang menandai, dan tabel payments
+// mencatat siapa yang menandai, kapan, dan catatannya. Ketiganya ikut dikirim
+// supaya setiap penandaan bisa ditelusuri dari layar, bukan dari log.
+//
+// Nomor telepon dan email TIDAK ikut. Pesertanya di bawah umur, dan layar ini
+// tidak membutuhkan keduanya untuk mengerjakan tugasnya.
+// -----------------------------------------------------------------------------
+app.get('/admin/peserta', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) => {
+  const { hal, per, dari, sampai } = bacaPaginasi(c, 25);
+  const status = (c.req.query('status') ?? '').trim().toUpperCase();
+  const cari = (c.req.query('cari') ?? '').trim();
+
+  let q = db(c.env)
+    .from('registrations')
+    .select(
+      'id, kode_registrasi, status, profil_lengkap, created_at, ' +
+      'users!inner(nama, participants(asal_sekolah, kelas)), ' +
+      'payments(ditandai_at, catatan, dibatalkan, users:ditandai_oleh(nama))',
+      { count: 'exact' },
+    )
+    .order('created_at', { ascending: false })
+    .range(dari, sampai);
+
+  const STATUS_SAH = ['PROFIL_BELUM_LENGKAP', 'MENUNGGU_PEMBAYARAN', 'LUNAS', 'DIBATALKAN'];
+  if (status && STATUS_SAH.includes(status)) q = q.eq('status', status);
+
+  // Dicari lewat kode registrasi. Nama ada di tabel lain, dan menyaring lewat
+  // relasi di PostgREST ikut membuang baris yang relasinya kosong.
+  if (cari) q = q.ilike('kode_registrasi', `%${cari}%`);
+
+  const { data, count, error } = await q;
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  // Bentuk hasil embed bersarang PostgREST tidak bisa disimpulkan tipenya,
+  // jadi dibentuk di sini sekali, bukan dengan cast tersebar di tiap baris.
+  interface BarisMentah {
+    id: string;
+    kode_registrasi: string;
+    status: string;
+    profil_lengkap: boolean;
+    created_at: string;
+    users: unknown;
+    payments: unknown;
+  }
+
+  const baris = ((data ?? []) as unknown as BarisMentah[]).map((r) => {
+    const u = satu<{ nama: string; participants: unknown }>(r.users);
+    const pt = satu<{ asal_sekolah: string; kelas: string }>(u?.participants);
+    // payments bisa lebih dari satu kalau pernah dibatalkan lalu ditandai lagi.
+    type Bayar = {
+      ditandai_at?: string; catatan?: string; dibatalkan?: boolean; users?: unknown;
+    };
+    const bayarSemua = (Array.isArray(r.payments) ? r.payments : [r.payments])
+      .filter(Boolean) as Bayar[];
+    const b = bayarSemua.find((x) => !x.dibatalkan) ?? bayarSemua[0];
+
+    return {
+      id: r.id,
+      kode_registrasi: r.kode_registrasi,
+      nama: u?.nama ?? 'Peserta',
+      asal_sekolah: pt?.asal_sekolah ?? null,
+      kelas: pt?.kelas ?? null,
+      status: r.status,
+      profil_lengkap: r.profil_lengkap,
+      daftar_at: r.created_at,
+      bayar: b
+        ? {
+            ditandai_at: b.ditandai_at ?? null,
+            ditandai_oleh: satu<{ nama: string }>(b.users)?.nama ?? null,
+            catatan: b.catatan ?? null,
+            dibatalkan: Boolean(b.dibatalkan),
+          }
+        : null,
+    };
+  });
+
+  return halaman(c, baris, count ?? 0, hal, per);
+});
+
+// -----------------------------------------------------------------------------
+// GET /admin/payments/hitungan
+//
+// Jumlah per status, dihitung di server dengan count head. Dipakai kartu angka
+// di atas daftar supaya panitia tahu keadaan keseluruhan tanpa membuka tiap
+// saringan satu per satu.
+// -----------------------------------------------------------------------------
+app.get('/admin/hitungan', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) => {
+  const d = db(c.env);
+  const H = { count: 'exact' as const, head: true };
+
+  const [semua, belumLengkap, menunggu, lunas, batal] = await Promise.all([
+    d.from('registrations').select('*', H),
+    d.from('registrations').select('*', H).eq('status', 'PROFIL_BELUM_LENGKAP'),
+    d.from('registrations').select('*', H).eq('status', 'MENUNGGU_PEMBAYARAN'),
+    d.from('registrations').select('*', H).eq('status', 'LUNAS'),
+    d.from('registrations').select('*', H).eq('status', 'DIBATALKAN'),
+  ]);
+
+  const n = (r: { count: number | null }) => r.count ?? 0;
+  return ok(c, {
+    total: n(semua),
+    profil_belum_lengkap: n(belumLengkap),
+    menunggu_pembayaran: n(menunggu),
+    lunas: n(lunas),
+    dibatalkan: n(batal),
+  });
 });
 
 // -----------------------------------------------------------------------------
