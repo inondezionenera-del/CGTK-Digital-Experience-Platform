@@ -6,6 +6,7 @@ import { AppError, pastikanSukses } from '../lib/errors';
 import { ok, halaman, bacaPaginasi } from '../lib/respond';
 import * as setting from '../lib/settings';
 import { wajibLogin } from '../middleware/auth';
+import { satu } from '../lib/relasi';
 import { butuhIzin, wajibSuperAdmin } from '../middleware/rbac';
 
 /**
@@ -165,7 +166,7 @@ app.get('/admin/belum-lunas', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) =
 
   let q = db(c.env)
     .from('registrations')
-    .select('id, kode_registrasi, created_at, users!inner(nama, email), participants:users!inner(participants(asal_sekolah, kelas))', { count: 'exact' })
+    .select('id, kode_registrasi, created_at, users!inner(nama, participants(asal_sekolah, kelas))', { count: 'exact' })
     .eq('status', 'MENUNGGU_PEMBAYARAN')
     .order('created_at', { ascending: true })
     .range(dari, sampai);
@@ -175,7 +176,36 @@ app.get('/admin/belum-lunas', wajibLogin, butuhIzin('TANDAI_LUNAS'), async (c) =
   const { data, count, error } = await q;
   if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
 
-  return halaman(c, data ?? [], count ?? 0, hal, per);
+  // Dirapikan jadi bentuk datar sebelum dikirim, bukan diteruskan apa adanya.
+  //
+  // Dua alasan. Pertama, bentuk mentah PostgREST untuk relasi bersarang susah
+  // dipakai di layar dan berubah kalau select-nya disentuh sedikit saja.
+  // Kedua, email ikut terbawa di versi sebelumnya padahal layar ini tidak
+  // membutuhkannya: yang dikerjakan Administrasi di sini cuma menandai siapa
+  // yang sudah membayar, dan pesertanya di bawah umur.
+  //
+  // satu(): relasi satu-ke-satu dikembalikan PostgREST sebagai objek kalau
+  // kuncinya unik dan sebagai array kalau tidak. Menebaknya pernah membuat
+  // tujuh endpoint menjawab 403 tanpa sebab yang kelihatan.
+  // registrations TIDAK punya relasi langsung ke participants: keduanya
+  // menunjuk users. Jadi jalurnya lewat users, dan participants dibuka satu
+  // tingkat lebih dalam. Versi yang menyambung langsung dijawab PostgREST
+  // dengan "Could not find a relationship between 'registrations' and
+  // 'participants'".
+  const baris = (data ?? []).map((r) => {
+    const u = satu<{ nama: string; participants: unknown }>(r.users);
+    const pt = satu<{ asal_sekolah: string; kelas: string }>(u?.participants);
+    return {
+      id: r.id,
+      kode_registrasi: r.kode_registrasi,
+      nama: u?.nama ?? 'Peserta',
+      asal_sekolah: pt?.asal_sekolah ?? null,
+      kelas: pt?.kelas ?? null,
+      created_at: r.created_at,
+    };
+  });
+
+  return halaman(c, baris, count ?? 0, hal, per);
 });
 
 // -----------------------------------------------------------------------------
