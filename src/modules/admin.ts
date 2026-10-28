@@ -254,6 +254,46 @@ app.get('/points/admin/kewajaran', wajibLogin, wajibSuperAdmin, async (c) => {
 // AUDIT
 // =============================================================================
 
+// -----------------------------------------------------------------------------
+// GET /users/panitia
+//
+// Daftar akun panitia, untuk layar yang perlu memilih orang: menugaskan LO ke
+// alumni, misalnya. Tidak ada endpoint semacam ini sebelumnya, jadi penugasan
+// LO mustahil dibuat lewat web walaupun endpoint penugasannya sudah ada.
+//
+// PESERTA dan ALUMNI SENGAJA tidak pernah ikut, apa pun yang diminta di query.
+// Peserta berjumlah lima ratus orang dan di bawah umur; daftar lengkap nama
+// dan email mereka tidak dibutuhkan layar mana pun, dan satu endpoint yang
+// mengembalikannya adalah satu endpoint yang bisa disalahgunakan nanti.
+// Peserta dicari lewat /participants/cari yang hanya mengembalikan dua puluh
+// baris sekali cari dan tidak memuat email.
+// -----------------------------------------------------------------------------
+const PERAN_PANITIA = [
+  'SUPER_ADMIN', 'DIV_ACARA', 'DIV_ADMINISTRASI', 'DIV_PENDANAAN', 'LO_PENDIDIKAN',
+];
+
+app.get('/users/panitia', wajibLogin, butuhIzin('UNDANG_ALUMNI', 'KELOLA_USER'), async (c) => {
+  const diminta = (c.req.query('peran') ?? '').trim();
+  const peran = diminta && PERAN_PANITIA.includes(diminta) ? [diminta] : PERAN_PANITIA;
+
+  const { data, error } = await db(c.env)
+    .from('users')
+    .select('id, nama, email, status, roles!inner(kode, nama)')
+    .in('roles.kode', peran)
+    // Kolomnya status dengan nilai AKTIF, bukan boolean bernama aktif.
+    .eq('status', 'AKTIF')
+    .order('nama');
+
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  return ok(c, (data ?? []).map((u) => ({
+    id: u.id,
+    nama: u.nama,
+    email: u.email,
+    peran: satu<{ kode: string }>(u.roles)?.kode ?? null,
+  })));
+});
+
 app.get('/audit', wajibLogin, butuhIzin('LIHAT_AUDIT'), async (c) => {
   const { hal, per, dari, sampai } = bacaPaginasi(c, 50);
   const aksi = c.req.query('aksi');
