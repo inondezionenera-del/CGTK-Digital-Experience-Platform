@@ -7,12 +7,33 @@ import { db } from '../lib/db';
 /**
  * Authentication.
  *
- * Supabase issues HS256 access tokens. They are verified here with WebCrypto
- * rather than by calling Supabase for every request — at fifteen gate scans a
- * second, a round trip per scan is fifteen avoidable round trips.
+ * Token diverifikasi di sini dengan WebCrypto, bukan dengan menanyakannya ke
+ * Supabase tiap permintaan: pada lima belas scan per detik di pintu masuk,
+ * satu perjalanan bolak-balik per scan adalah lima belas yang sia-sia.
  *
- * `sub` in the token is the same UUID as `public.users.id`: the application row
- * is created with the auth id on first sign-in, so no extra mapping is needed.
+ * DUA ALGORITMA, dan ini sebabnya login Google pernah gagal total.
+ *
+ * Dulu di sini cuma ada HS256 dengan SUPABASE_JWT_SECRET. Tapi proyek Supabase
+ * ini sudah memakai kunci penanda tangan asimetris: endpoint
+ * /auth/v1/.well-known/jwks.json miliknya memuat satu kunci ES256. Artinya
+ * token yang benar-benar diterbitkan Supabase untuk orang yang login lewat
+ * Google ditandatangani ES256, dan verifikasi HMAC terhadapnya SELALU gagal.
+ *
+ * Akibatnya persis seperti yang dilaporkan: orang menyelesaikan login Google,
+ * kembali ke aplikasi, /auth/sinkron menolak tokennya, identitasnya tidak
+ * pernah terisi, dan dia terlempar balik ke halaman masuk.
+ *
+ * Ini tidak pernah ketahuan dari pengujian karena semua token uji dibuat
+ * sendiri dengan HS256 memakai SUPABASE_JWT_SECRET, jadi jalur yang diuji
+ * bukan jalur yang dipakai orang sungguhan.
+ *
+ * HS256 TETAP didukung. Supabase masih menerima rahasia lama untuk sebagian
+ * token, skrip loadtest memakainya, dan mematikannya tidak memberi keamanan
+ * tambahan apa pun.
+ *
+ * `sub` di dalam token adalah UUID yang sama dengan public.users.id: baris
+ * aplikasinya dibuat dengan id auth saat pertama kali masuk, jadi tidak perlu
+ * tabel pemetaan terpisah.
  */
 
 const enc = new TextEncoder();
@@ -30,21 +51,101 @@ interface Klaim {
   [k: string]: unknown;
 }
 
-export async function verifikasiToken(token: string, secret: string): Promise<Klaim> {
+interface KunciJwk {
+  kid?: string;
+  kty?: string;
+  alg?: string;
+  crv?: string;
+  [k: string]: unknown;
+}
+
+/**
+ * Kunci publik Supabase, disimpan selama isolate hidup.
+ *
+ * Isinya kunci PUBLIK, bukan data pengguna, jadi aman dipakai bersama antar
+ * permintaan di satu isolate. Disegarkan kalau ada kid yang tidak dikenal,
+ * supaya perputaran kunci di Supabase tidak membuat semua orang gagal masuk
+ * sampai ada yang men-deploy ulang.
+ */
+let jwksTersimpan: { kunci: Map<string, CryptoKey>; waktu: number } | null = null;
+const JWKS_UMUR_MS = 10 * 60 * 1000;
+
+async function ambilJwks(env: Env, paksa = false): Promise<Map<string, CryptoKey>> {
+  const tersimpan = jwksTersimpan;
+  if (!paksa && tersimpan && Date.now() - tersimpan.waktu < JWKS_UMUR_MS) {
+    return tersimpan.kunci;
+  }
+
+  const r = await fetch(`${env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`, {
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!r.ok) throw new AppError('ERROR_SERVER', { pesan: 'Gagal mengambil kunci Supabase' });
+
+  const { keys } = (await r.json()) as { keys?: KunciJwk[] };
+  const peta = new Map<string, CryptoKey>();
+
+  for (const k of keys ?? []) {
+    if (!k.kid) continue;
+    try {
+      const algoritma =
+        k.kty === 'EC'
+          ? { name: 'ECDSA', namedCurve: (k.crv as string) ?? 'P-256' }
+          : { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+      peta.set(k.kid, await crypto.subtle.importKey('jwk', k as JsonWebKey, algoritma, false, ['verify']));
+    } catch {
+      // Satu kunci yang tidak bisa dibaca tidak boleh menjatuhkan sisanya.
+    }
+  }
+
+  jwksTersimpan = { kunci: peta, waktu: Date.now() };
+  return peta;
+}
+
+export async function verifikasiToken(token: string, env: Env): Promise<Klaim> {
   const bagian = token.split('.');
   if (bagian.length !== 3) throw new AppError('TOKEN_KEDALUWARSA');
 
   const [header, payload, signature] = bagian as [string, string, string];
 
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['verify'],
-  );
+  let kepala: { alg?: string; kid?: string };
+  try {
+    kepala = JSON.parse(new TextDecoder().decode(dariBase64Url(header)));
+  } catch {
+    throw new AppError('TOKEN_KEDALUWARSA');
+  }
 
-  const cocok = await crypto.subtle.verify(
-    'HMAC', key, dariBase64Url(signature), enc.encode(`${header}.${payload}`),
-  );
+  const data = enc.encode(`${header}.${payload}`);
+  const tandaTangan = dariBase64Url(signature);
+  let cocok = false;
+
+  if (kepala.alg === 'HS256') {
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(env.SUPABASE_JWT_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false, ['verify'],
+    );
+    cocok = await crypto.subtle.verify('HMAC', key, tandaTangan, data);
+  } else if (kepala.alg === 'ES256' || kepala.alg === 'RS256') {
+    if (!kepala.kid) throw new AppError('TOKEN_KEDALUWARSA');
+
+    // Dicoba dengan kunci yang tersimpan dulu; kalau kid-nya belum dikenal,
+    // JWKS diambil ulang sekali. Perputaran kunci di Supabase tidak boleh
+    // membuat semua orang gagal masuk sampai ada yang men-deploy ulang.
+    let kunci = (await ambilJwks(env)).get(kepala.kid);
+    if (!kunci) kunci = (await ambilJwks(env, true)).get(kepala.kid);
+    if (!kunci) throw new AppError('TOKEN_KEDALUWARSA');
+
+    const algoritma =
+      kepala.alg === 'ES256'
+        ? { name: 'ECDSA', hash: 'SHA-256' }
+        : { name: 'RSASSA-PKCS1-v1_5' };
+    cocok = await crypto.subtle.verify(algoritma, kunci, tandaTangan, data);
+  } else {
+    // Algoritma yang tidak dikenal ditolak, termasuk 'none'. Menerima apa pun
+    // yang disebutkan token itu sendiri adalah cara klasik melewati verifikasi.
+    throw new AppError('TOKEN_KEDALUWARSA');
+  }
+
   if (!cocok) throw new AppError('TOKEN_KEDALUWARSA');
 
   const klaim = JSON.parse(new TextDecoder().decode(dariBase64Url(payload))) as Klaim;
@@ -113,7 +214,7 @@ export const wajibLogin: MiddlewareHandler<{ Bindings: Env; Variables: Variables
     // Sampai di sini berarti tokennya ADA tapi loginOpsional tidak berhasil
     // memakainya. Diverifikasi ulang supaya yang keluar pesan yang tepat,
     // misalnya TOKEN_KEDALUWARSA, bukan TIDAK_LOGIN yang menyesatkan.
-    const klaim = await verifikasiToken(token, c.env.SUPABASE_JWT_SECRET);
+    const klaim = await verifikasiToken(token, c.env);
     c.set('pengguna', await muatPengguna(c.env, klaim.sub));
     await next();
   };
@@ -125,7 +226,7 @@ export const loginOpsional: MiddlewareHandler<{ Bindings: Env; Variables: Variab
     const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (token) {
       try {
-        const klaim = await verifikasiToken(token, c.env.SUPABASE_JWT_SECRET);
+        const klaim = await verifikasiToken(token, c.env);
         c.set('pengguna', await muatPengguna(c.env, klaim.sub));
       } catch {
         // An invalid token on a public route is simply ignored.

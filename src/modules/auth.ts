@@ -29,7 +29,12 @@ async function tujuan(env: Env, userId: string, peran: string): Promise<string> 
     case 'PESERTA': {
       const { data } = await db(env)
         .from('registrations').select('status').eq('user_id', userId).maybeSingle();
-      if (!data) return '/register';
+      // '/daftar', bukan '/register'. Rute di frontend bernama /daftar, dan
+      // alamat yang dikirim di sini dipakai langsung untuk berpindah halaman.
+      // Selama ini pengguna PESERTA yang baru pertama kali masuk dikirim ke
+      // /register yang tidak ada rutenya, lalu mendarat di halaman tidak
+      // ditemukan. Itu sebabnya orang mengira dirinya gagal login.
+      if (!data) return '/daftar';
       return data.status === 'LUNAS' ? '/dashboard' : '/bayar';
     }
     case 'ALUMNI': {
@@ -37,7 +42,10 @@ async function tujuan(env: Env, userId: string, peran: string): Promise<string> 
         .from('representatives').select('bio, foto_url').eq('user_id', userId).maybeSingle();
       // First visit goes to the welcome page — alumni never attend a briefing,
       // so without it they arrive knowing nothing about the day.
-      return data?.bio || data?.foto_url ? '/alumni' : '/alumni/sambutan';
+      // Sambutannya sudah menyatu di beranda alumni, dan /alumni/sambutan
+      // tidak pernah punya rute sendiri di frontend. Alumni yang baru pertama
+      // masuk pun diarahkan ke /alumni.
+      return '/alumni';
     }
     case 'LO_PENDIDIKAN': return '/lo';
     case 'SUPER_ADMIN':
@@ -59,7 +67,7 @@ const skemaSinkron = z.object({ access_token: z.string().min(20) });
 
 app.post('/sinkron', batasi(BATAS.auth), async (c) => {
   const body = skemaSinkron.parse(await c.req.json());
-  const klaim = await verifikasiToken(body.access_token, c.env.SUPABASE_JWT_SECRET);
+  const klaim = await verifikasiToken(body.access_token, c.env);
 
   const email = String(klaim.email ?? '').toLowerCase();
   if (!email) throw new AppError('KODE_GOOGLE_TIDAK_VALID');
