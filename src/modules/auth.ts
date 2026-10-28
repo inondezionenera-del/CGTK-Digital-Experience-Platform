@@ -18,6 +18,20 @@ import { batasi, BATAS } from '../middleware/ratelimit';
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 /**
+ * Izin apa pun yang menandakan orang ini panitia.
+ *
+ * Dipakai untuk menyalakan sisi panitia di pemindah konteks. Bukan untuk
+ * memberi akses: yang memberi akses tetap butuhIzin di tiap endpoint.
+ */
+const IZIN_PANITIA = [
+  'TANDAI_LUNAS', 'SCAN_PRESENSI', 'SAKLAR_SESI', 'KELOLA_JADWAL',
+  'KELOLA_BOOTH', 'KIRIM_PENGUMUMAN', 'KELOLA_SPONSOR', 'KELOLA_KONTEN',
+  'KELOLA_MASTER', 'UNDANG_ALUMNI', 'KELOLA_FORM', 'EKSPOR_LPJ',
+  'LIHAT_AUDIT', 'BEKUKAN_LEADERBOARD', 'SAHKAN_PEMENANG',
+  'ATUR_PEMBAYARAN', 'PENGATURAN_SISTEM', 'ATUR_XP', 'LIHAT_ANALITIK',
+];
+
+/**
  * Where a person goes after signing in.
  *
  * Returned by the server rather than decided in the browser. Eight branches
@@ -139,8 +153,43 @@ app.post('/sinkron', batasi(BATAS.auth), async (c) => {
     .map((r) => (r.permissions as unknown as { kode: string })?.kode)
     .filter(Boolean);
 
+  // ---------------------------------------------------------------------
+  // Kapabilitas, bukan cuma peran.
+  //
+  // Otorisasi di aplikasi ini sebenarnya berdiri di atas dua hal yang berbeda:
+  //
+  //   peran  menentukan izin administrasi, lewat role_permissions
+  //   baris  menentukan sisi peserta dan alumni: wajibLunas cuma memeriksa
+  //          ada baris participants, wajibAlumni cuma memeriksa ada baris
+  //          representatives. Keduanya TIDAK PERNAH melihat peran.
+  //
+  // Artinya satu akun bisa menjadi peserta, alumni, dan panitia sekaligus
+  // tanpa satu baris pun skema berubah, dan memang begitu akun pengelola
+  // proyek disiapkan.
+  //
+  // Frontend perlu tahu ketiganya untuk menampilkan pemindah konteks. Dulu dia
+  // cuma menerima peran, jadi akun yang punya tiga sisi tetap cuma melihat
+  // satu menu.
+  //
+  // Ini BUKAN pemberian hak. Yang dikirim di sini cuma cermin dari baris yang
+  // memang sudah dimiliki; tiap endpoint tetap memeriksa sendiri di server.
+  // ---------------------------------------------------------------------
+  const [{ data: barisPeserta }, { data: barisAlumni }] = await Promise.all([
+    db(c.env).from('participants').select('id').eq('user_id', klaim.sub).maybeSingle(),
+    db(c.env).from('representatives').select('id, status').eq('user_id', klaim.sub).maybeSingle(),
+  ]);
+
+  const kapabilitas = {
+    peserta: Boolean(barisPeserta),
+    alumni: Boolean(barisAlumni) && barisAlumni?.status !== 'NONAKTIF',
+    panitia: izin.some((k) => IZIN_PANITIA.includes(k)) || peranKode === 'SUPER_ADMIN',
+  };
+
   return ok(c, {
-    pengguna: { id: klaim.sub, email, nama, foto_url: foto ?? null, peran: peranKode, izin },
+    pengguna: {
+      id: klaim.sub, email, nama, foto_url: foto ?? null,
+      peran: peranKode, izin, kapabilitas,
+    },
     arahkan_ke: await tujuan(c.env, klaim.sub, peranKode),
     akun_baru: akunBaru,
   });
