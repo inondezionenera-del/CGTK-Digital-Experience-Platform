@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env, Variables } from '../env';
 import { db, rpc } from '../lib/db';
-import { AppError } from '../lib/errors';
+import { AppError, pastikanSukses } from '../lib/errors';
 import { ok, dibuat } from '../lib/respond';
 import * as setting from '../lib/settings';
 import { wajibLogin } from '../middleware/auth';
+import { butuhIzin } from '../middleware/rbac';
 
 /**
  * Kuis minat bakat, misi, achievement, dan papan peringkat.
@@ -502,6 +503,103 @@ app.get('/leaderboard', wajibLogin, async (c) => {
       total_xp: Number(b.total_xp ?? 0),
     })),
   });
+});
+
+// =============================================================================
+// PEMBEKUAN DAN PENGESAHAN PEMENANG
+//
+// Fungsi databasenya sudah ada sejak migration 0009 dan sudah benar, tapi
+// selama ini TIDAK ADA satu pun endpoint yang memanggilnya. Artinya papan
+// peringkat tidak pernah bisa dibekukan dan pemenang tidak pernah bisa
+// disahkan, kecuali ada yang membuka psql di tengah acara.
+//
+// Dua langkah, bukan satu, dan itu disengaja di rancangan aslinya:
+//
+//   1. Bekukan. Urutan berhenti bergerak dan disimpan sebagai snapshot. XP
+//      boleh terus masuk, papan tidak ikut berubah.
+//   2. Sahkan. Panitia memeriksa snapshot itu dulu, baru mengesahkan. Memeriksa
+//      sesudah nama diumumkan di atas panggung sudah terlambat.
+//
+// Izinnya juga berbeda: membekukan boleh Divisi Acara, mengesahkan hanya Super
+// Admin. Yang mengumumkan pemenang menanggung akibatnya kalau salah.
+// =============================================================================
+
+/**
+ * GET /leaderboard/admin/status
+ *
+ * Supaya layar admin tahu harus menampilkan tombol yang mana tanpa menebak.
+ */
+app.get('/leaderboard/admin/status', wajibLogin, butuhIzin('BEKUKAN_LEADERBOARD'), async (c) => {
+  const { data, error } = await db(c.env)
+    .from('leaderboard_freeze')
+    .select('id, dibekukan_at, disahkan_at, jumlah_pemenang, catatan, snapshot')
+    .order('dibekukan_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  const snapshot = (data?.snapshot ?? null) as { peringkat?: BarisPeringkat[] } | null;
+
+  return ok(c, {
+    beku: Boolean(data?.dibekukan_at),
+    dibekukan_at: data?.dibekukan_at ?? null,
+    disahkan: Boolean(data?.disahkan_at),
+    disahkan_at: data?.disahkan_at ?? null,
+    jumlah_pemenang: data?.jumlah_pemenang ?? null,
+    catatan: data?.catatan ?? null,
+    // Nama pemenang ikut dikirim supaya panitia bisa memeriksanya SEBELUM
+    // mengesahkan. asal_sekolah tidak diteruskan, sama seperti papan publik.
+    pemenang: (snapshot?.peringkat ?? [])
+      .slice(0, data?.jumlah_pemenang ?? 3)
+      .map((b, i) => ({
+        peringkat: b.posisi ?? i + 1,
+        participant_id: String(b.participant_id),
+        nama: b.nama || 'Peserta',
+        total_xp: Number(b.total_xp ?? 0),
+      })),
+  });
+});
+
+const skemaBekukan = z.object({
+  jumlah_pemenang: z.coerce.number().int().min(1).max(50).optional(),
+});
+
+app.post('/leaderboard/admin/bekukan', wajibLogin, butuhIzin('BEKUKAN_LEADERBOARD'), async (c) => {
+  const p = c.get('pengguna');
+  const badan = skemaBekukan.safeParse(await c.req.json().catch(() => ({})));
+  if (!badan.success) throw new AppError('DATA_TIDAK_VALID');
+
+  const jumlah =
+    badan.data.jumlah_pemenang ?? (await setting.angka(c.env, 'jumlah_pemenang', 3));
+
+  const hasil = await rpc<{ sukses: boolean; kode?: string; pesan?: string; data?: unknown }>(
+    c.env, 'bekukan_leaderboard', { p_oleh: p.id, p_jumlah_pemenang: jumlah },
+  );
+
+  pastikanSukses(hasil);
+  return ok(c, hasil.data);
+});
+
+const skemaSahkan = z.object({
+  jumlah_pemenang: z.coerce.number().int().min(1).max(50).optional(),
+  catatan: z.string().max(500).optional(),
+});
+
+app.post('/leaderboard/admin/sahkan', wajibLogin, butuhIzin('SAHKAN_PEMENANG'), async (c) => {
+  const p = c.get('pengguna');
+  const badan = skemaSahkan.safeParse(await c.req.json().catch(() => ({})));
+  if (!badan.success) throw new AppError('DATA_TIDAK_VALID');
+
+  const hasil = await rpc<{ sukses: boolean; kode?: string; pesan?: string; data?: unknown }>(
+    c.env, 'sahkan_pemenang', {
+      p_oleh: p.id,
+      p_jumlah: badan.data.jumlah_pemenang ?? null,
+      p_catatan: badan.data.catatan ?? null,
+    },
+  );
+
+  pastikanSukses(hasil);
+  return ok(c, hasil.data);
 });
 
 export default app;

@@ -30,26 +30,12 @@ const app = new Hono<{ Bindings: Env; Variables: Variables }>();
  */
 app.get('/settings/publik', async (c) => ok(c, await setting.semuaPublik(c.env)));
 
-app.get('/settings/admin', wajibLogin, async (c) => {
-  const p = c.get('pengguna');
-  const { data } = await db(c.env)
-    .from('settings').select('kunci, nilai, tipe, kelompok, deskripsi, diubah_at')
-    .order('kelompok').order('kunci');
-
-  // Secrets stay masked even for admins. Nobody needs to read the form URL out
-  // of a settings screen; they only need to be able to replace it.
-  const rahasia = new Set(['link_pembayaran', 'prefill_entry_id']);
-  const bolehLihatRahasia = p.izin.includes('ATUR_PEMBAYARAN') || p.peran === 'SUPER_ADMIN';
-
-  return ok(c, (data ?? []).map((s) => ({
-    ...s,
-    nilai: rahasia.has(s.kunci) && !bolehLihatRahasia
-      ? (s.nilai ? '••••••' : '')
-      : s.nilai,
-  })));
-});
-
-/** Which permission may edit which group of settings. */
+/**
+ * Izin mana yang boleh mengubah kelompok setelan mana.
+ *
+ * Dideklarasikan di atas kedua handler karena keduanya memakainya, dan const
+ * tidak ikut terangkat seperti function.
+ */
 const IZIN_KELOMPOK: Record<string, string[]> = {
   bayar:  ['ATUR_PEMBAYARAN'],
   xp:     ['ATUR_XP'],
@@ -58,6 +44,56 @@ const IZIN_KELOMPOK: Record<string, string[]> = {
   acara:  ['KELOLA_JADWAL'],
   sistem: ['PENGATURAN_SISTEM'],
 };
+
+app.get('/settings/admin', wajibLogin, async (c) => {
+  const p = c.get('pengguna');
+
+  // Pemeriksaan izin, yang sebelumnya TIDAK ADA di sini.
+  //
+  // Endpoint ini cuma memakai wajibLogin, jadi peserta biasa yang mengambil
+  // alamatnya mendapat seluruh isi tabel settings: nilai XP tiap kegiatan,
+  // jumlah pemenang, batas percobaan kuis, saklar Mode Hemat, sampai petunjuk
+  // pembayaran. Sudah dicoba dengan token peserta sungguhan dan dijawab 200
+  // berisi delapan belas baris.
+  //
+  // Yang boleh dibaca sekarang HANYA kelompok yang memang boleh dia ubah.
+  // Divisi Pendanaan tidak perlu melihat setelan XP, dan Divisi Acara tidak
+  // perlu melihat petunjuk pembayaran. Yang tidak punya izin satu pun ditolak.
+  //
+  // Setelan yang memang untuk peserta sudah punya pintunya sendiri di
+  // GET /settings/publik, dan itu yang dipakai halaman depan.
+  const kelompokBoleh = Object.entries(IZIN_KELOMPOK)
+    .filter(([, butuh]) => butuh.some((i) => p.izin.includes(i)))
+    .map(([kelompok]) => kelompok);
+
+  const superAdmin = p.peran === 'SUPER_ADMIN';
+  if (!superAdmin && kelompokBoleh.length === 0) {
+    throw new AppError('TIDAK_BERHAK', undefined,
+      'Kamu tidak punya akses ke pengaturan mana pun.');
+  }
+
+  let q = db(c.env)
+    .from('settings').select('kunci, nilai, tipe, kelompok, deskripsi, diubah_at')
+    .order('kelompok').order('kunci');
+
+  if (!superAdmin) q = q.in('kelompok', kelompokBoleh);
+
+  const { data, error } = await q;
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  // Rahasia tetap tersamar walaupun untuk admin. Tidak ada yang perlu MEMBACA
+  // alamat form pembayaran dari layar pengaturan; mereka cuma perlu bisa
+  // menggantinya.
+  const rahasia = new Set(['link_pembayaran', 'prefill_entry_id']);
+  const bolehLihatRahasia = p.izin.includes('ATUR_PEMBAYARAN') || superAdmin;
+
+  return ok(c, (data ?? []).map((s) => ({
+    ...s,
+    nilai: rahasia.has(s.kunci) && !bolehLihatRahasia
+      ? (s.nilai ? '••••••' : '')
+      : s.nilai,
+  })));
+});
 
 app.patch('/settings/admin/:kunci', wajibLogin, async (c) => {
   const p = c.get('pengguna');
