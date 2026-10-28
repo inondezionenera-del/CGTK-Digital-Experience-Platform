@@ -5,6 +5,7 @@ import { db, rpc } from '../lib/db';
 import { AppError, pastikanSukses } from '../lib/errors';
 import { ok, dibuat } from '../lib/respond';
 import { bacaQr, bacaQrBooth, susunQrBooth } from '../lib/qr';
+import { satu } from '../lib/relasi';
 import { wajibLogin } from '../middleware/auth';
 import { butuhIzin, wajibAlumni, wajibLunas } from '../middleware/rbac';
 import { batasi, BATAS } from '../middleware/ratelimit';
@@ -354,6 +355,47 @@ function kodeBooth(nama: string): string {
     .toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || 'BT';
   return `${awalan}-${Math.floor(100 + Math.random() * 900)}`;
 }
+
+// -----------------------------------------------------------------------------
+// GET /booths/admin/semua
+//
+// Daftar booth untuk layar pengelolaan, TERMASUK yang berstatus DRAFT.
+//
+// Ini yang membuat pengelolaan booth sebelumnya mustahil. Booth baru lahir
+// dengan status DRAFT (lihat migration 0005), sementara GET /booths dan
+// GET /booths/admin/poster/semua dua-duanya memakai .neq('status','DRAFT').
+// Jadi booth yang baru dibuat langsung hilang dari setiap layar, termasuk dari
+// layar yang baru saja membuatnya, dan tombol Buat Otomatis yang membuat
+// belasan booth sekaligus terlihat seperti tidak melakukan apa-apa.
+//
+// Persis masalah yang sama pernah terjadi pada sesi, dan jawabannya juga sama:
+// satu endpoint admin tersendiri, bukan melonggarkan saringan di endpoint
+// publik. Peserta tetap tidak boleh melihat booth yang belum disiapkan.
+// -----------------------------------------------------------------------------
+app.get('/admin/semua', wajibLogin, butuhIzin('KELOLA_BOOTH'), async (c) => {
+  const { data, error } = await db(c.env)
+    .from('booths')
+    .select('id, nama_tampilan, kode_booth, booth_type, lokasi, status, urutan, xp_max, event_id, events(id, nama, tipe), universities(nama, singkatan), majors(nama)')
+    .order('event_id')
+    .order('urutan');
+
+  if (error) throw new AppError('ERROR_SERVER', { pesan: error.message });
+
+  return ok(c, (data ?? []).map((b) => ({
+    id: b.id,
+    nama_tampilan: b.nama_tampilan,
+    kode_booth: b.kode_booth,
+    booth_type: b.booth_type,
+    lokasi: b.lokasi,
+    status: b.status,
+    urutan: b.urutan,
+    xp_max: b.xp_max,
+    event_id: b.event_id,
+    acara: satu<{ nama: string }>(b.events)?.nama ?? null,
+    kampus: satu<{ singkatan: string }>(b.universities)?.singkatan ?? null,
+    jurusan: satu<{ nama: string }>(b.majors)?.nama ?? null,
+  })));
+});
 
 app.post('/admin', wajibLogin, butuhIzin('KELOLA_BOOTH'), async (c) => {
   const p = c.get('pengguna');
