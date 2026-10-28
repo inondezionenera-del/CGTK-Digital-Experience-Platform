@@ -90,7 +90,19 @@ export function batasi(opsi: OpsiBatas): MiddlewareHandler<{ Bindings: Env; Vari
 
 /** Limits from the API contract. */
 export const BATAS = {
-  auth:      { nama: 'auth',   maks: 10,  jendela: 60, binding: 'BATAS_AUTH' },
+  // 60, bukan 10.
+  //
+  // Bucket ini dipakai POST /auth/sinkron, dan itu BUKAN percobaan login:
+  // tidak ada kata sandi yang bisa ditebak di sini. Yang masuk ke sana sudah
+  // membawa JWT yang terbit dari Google lewat Supabase, dan endpoint-nya cuma
+  // menukar token itu dengan identitas serta daftar izin.
+  //
+  // Frontend memanggilnya tiap kali aplikasi dimuat, jadi me-refresh beberapa
+  // kali atau membuka beberapa tab sudah cukup menembus 10. Diuji di browser:
+  // membuka tiga halaman lalu me-refresh masing-masing sekali sudah membuat
+  // /auth/sinkron dijawab 429, dan akibatnya pengguna tidak bisa masuk sama
+  // sekali.
+  auth:      { nama: 'auth',   maks: 60,  jendela: 60, binding: 'BATAS_AUTH' },
   // 60, bukan 30. Satu pemindai di pintu masuk yang lancar bisa melewati 30
   // peserta dalam satu menit, dan pagar yang menolak panitia yang bekerja
   // dengan benar lebih merugikan daripada pagar yang sedikit longgar.

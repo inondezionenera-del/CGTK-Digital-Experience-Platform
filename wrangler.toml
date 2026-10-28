@@ -56,7 +56,7 @@ simple = { limit = 60, period = 60 }
 name = "BATAS_AUTH"
 type = "ratelimit"
 namespace_id = "1003"
-simple = { limit = 10, period = 60 }
+simple = { limit = 60, period = 60 }
 
 [[unsafe.bindings]]
 name = "BATAS_CEK"
